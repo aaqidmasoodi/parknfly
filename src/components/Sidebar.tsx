@@ -12,6 +12,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { useWhatsApp } from "@/lib/whatsapp-context";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -58,6 +59,10 @@ export function Sidebar() {
 
       {/* Bottom: Settings + WA status */}
       <div className="p-3 border-t border-border/40 space-y-1">
+        <div className="flex items-center justify-between px-3 py-2">
+          <span className="text-[11px] font-medium text-muted-foreground">Theme</span>
+          <ThemeToggle />
+        </div>
         <Link
           href="/settings#messages-section"
           className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all duration-200 group relative"
@@ -100,27 +105,32 @@ export function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 glass-card border-t border-border/40 flex justify-around py-3 pb-safe">
-      {[...navItems, { href: "/settings", label: "Settings", icon: Settings }].map((item) => {
-        const isActive = pathname === item.href;
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "flex flex-col items-center gap-1.5 px-3 py-1 text-[11px] font-medium transition-colors",
-              isActive
-                ? "text-primary"
-                : "text-muted-foreground"
-            )}
-          >
-            <div className={cn("p-1.5 rounded-full transition-all duration-300", isActive && "bg-primary/10 shadow-[0_0_12px_rgba(var(--primary),0.2)]")}>
-              <item.icon className={cn("h-5 w-5", isActive ? "text-primary" : "")} />
-            </div>
-            <span>{item.label}</span>
-          </Link>
-        );
-      })}
-    </nav>
+    <>
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 glass-card border-t border-border/40 flex justify-around py-3 pb-safe">
+        {[...navItems, { href: "/settings", label: "Settings", icon: Settings }].map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex flex-col items-center gap-1.5 px-3 py-1 text-[11px] font-medium transition-colors",
+                isActive
+                  ? "text-primary"
+                  : "text-muted-foreground"
+              )}
+            >
+              <div className={cn("p-1.5 rounded-full transition-all duration-300", isActive && "bg-primary/10 shadow-[0_0_12px_rgba(var(--primary),0.2)]")}>
+                <item.icon className={cn("h-5 w-5", isActive ? "text-primary" : "")} />
+              </div>
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+      <div className="md:hidden fixed bottom-20 right-4 z-50">
+        <ThemeToggle />
+      </div>
+    </>
   );
 }

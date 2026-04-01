@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  turbopack: {
+    ignore: [
+      "**/server/.wwebjs_auth/**",
+      "**/server/node_modules/**",
+    ],
+  },
 };
 
 export default nextConfig;

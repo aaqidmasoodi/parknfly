@@ -31,7 +31,10 @@ import {
   Eye,
   RotateCcw,
   CarFront,
+  Plane,
+  Copy,
 } from "lucide-react";
+import { toast } from "sonner";
 
 const statusFilters = [
   { value: "all", label: "All" },
@@ -42,15 +45,35 @@ const statusFilters = [
   { value: BookingStatus.NO_SHOW, label: "No-Show" },
 ];
 
+type BookingTypeFilter = "all" | "departures" | "returns";
+
 export default function BookingsPage() {
   const { bookings, loaded, checkIn, markNoShow, requestReturn } = useBookings();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [bookingTypeFilter, setBookingTypeFilter] = useState<BookingTypeFilter>("all");
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
+  const copyBookingDetails = (booking: Booking) => {
+    const details = `${booking.bookingRef} - ${booking.customerName} (${booking.passengers} passenger${booking.passengers !== 1 ? "s" : ""})`;
+    navigator.clipboard.writeText(details);
+    toast.success("Booking details copied", {
+      description: details,
+    });
+  };
+
   const filtered = useMemo(() => {
     let result = bookings;
+
+    // Filter by booking type (departures/returns)
+    const today = new Date();
+    const todayStr = today.toDateString();
+    if (bookingTypeFilter === "departures") {
+      result = result.filter((b) => new Date(b.entryDate).toDateString() === todayStr);
+    } else if (bookingTypeFilter === "returns") {
+      result = result.filter((b) => new Date(b.returnDate).toDateString() === todayStr);
+    }
 
     // Filter by status
     if (statusFilter !== "all") {
@@ -73,7 +96,7 @@ export default function BookingsPage() {
     return result.sort(
       (a, b) => new Date(a.entryDate).getTime() - new Date(b.entryDate).getTime()
     );
-  }, [bookings, search, statusFilter]);
+  }, [bookings, search, statusFilter, bookingTypeFilter]);
 
   if (!loaded) {
     return (
@@ -116,6 +139,37 @@ export default function BookingsPage() {
           </div>
         </div>
 
+        <div className="flex items-center gap-2">
+          <Tabs
+            value={bookingTypeFilter}
+            onValueChange={(v) => setBookingTypeFilter(v as BookingTypeFilter)}
+            className="w-full"
+          >
+            <TabsList className="bg-muted/50 p-1 rounded-xl h-auto flex flex-wrap gap-1">
+              <TabsTrigger
+                value="all"
+                className="text-xs rounded-lg px-3 py-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all duration-200"
+              >
+                All Bookings
+              </TabsTrigger>
+              <TabsTrigger
+                value="departures"
+                className="text-xs rounded-lg px-3 py-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all duration-200"
+              >
+                <Plane className="h-3.5 w-3.5 mr-1.5" />
+                Departures Today
+              </TabsTrigger>
+              <TabsTrigger
+                value="returns"
+                className="text-xs rounded-lg px-3 py-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all duration-200"
+              >
+                <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                Returns Today
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
         <Tabs
           value={statusFilter}
           onValueChange={setStatusFilter}
@@ -123,9 +177,9 @@ export default function BookingsPage() {
         >
           <TabsList className="bg-muted/50 p-1 rounded-xl h-auto flex flex-wrap gap-1">
             {statusFilters.map((f) => (
-              <TabsTrigger 
-                key={f.value} 
-                value={f.value} 
+              <TabsTrigger
+                key={f.value}
+                value={f.value}
                 className="text-xs rounded-lg px-3 py-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all duration-200"
               >
                 {f.label}
@@ -239,7 +293,17 @@ export default function BookingsPage() {
                             <Eye className="h-4 w-4 mr-2 text-muted-foreground" />
                             View Full Details
                           </DropdownMenuItem>
-                          
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              copyBookingDetails(booking);
+                            }}
+                            className="text-xs"
+                          >
+                            <Copy className="h-4 w-4 mr-2 text-muted-foreground" />
+                            Copy Details
+                          </DropdownMenuItem>
+
                           {booking.status === BookingStatus.BOOKED && (
                             <>
                               <div className="h-px bg-border/40 my-1 mx-2" />

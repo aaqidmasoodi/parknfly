@@ -1,4 +1,10 @@
 {
+  "name": "parkandfly-whatsapp-bridge",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "echo 'No build step required'",
+    "start": "node index.js"
+  },
   "dependencies": {
     "express": "^5.2.1",
     "qrcode": "^1.5.4",

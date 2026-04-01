@@ -27,15 +27,14 @@ interface WhatsAppContextValue {
 
 const WhatsAppContext = createContext<WhatsAppContextValue | null>(null);
 
-const WS_URL =
-  typeof window !== "undefined"
-    ? `ws://${window.location.hostname}:3001`
-    : "ws://localhost:3001";
-
-const API_URL =
-  typeof window !== "undefined"
+const WHATSAPP_BRIDGE_URL =
+  process.env.NEXT_PUBLIC_WHATSAPP_BRIDGE_URL ||
+  (typeof window !== "undefined"
     ? `http://${window.location.hostname}:3001`
-    : "http://localhost:3001";
+    : "http://localhost:3001");
+
+const WS_URL = WHATSAPP_BRIDGE_URL.replace("http", "ws");
+const API_URL = WHATSAPP_BRIDGE_URL;
 
 export function WhatsAppProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<WhatsAppStatus>("disconnected");

@@ -6,6 +6,7 @@ import { MessageStoreProvider } from "@/lib/message-store";
 import { WhatsAppProvider } from "@/lib/whatsapp-context";
 import { Sidebar, MobileNav } from "@/components/Sidebar";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -31,21 +32,29 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased dark`}
+      className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <body className="h-full flex">
-        <WhatsAppProvider>
-          <BookingProvider>
-            <MessageStoreProvider>
-              <Sidebar />
-              <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                {children}
-              </main>
-              <MobileNav />
-              <Toaster richColors position="bottom-right" />
-            </MessageStoreProvider>
-          </BookingProvider>
-        </WhatsAppProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <WhatsAppProvider>
+            <BookingProvider>
+              <MessageStoreProvider>
+                <Sidebar />
+                <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                  {children}
+                </main>
+                <MobileNav />
+                <Toaster richColors position="bottom-right" />
+              </MessageStoreProvider>
+            </BookingProvider>
+          </WhatsAppProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
