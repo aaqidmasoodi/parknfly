@@ -99,4 +99,22 @@ app.post("/api/whatsapp/send", async (req, res) => {
 // ── Start ────────────────────────────────────────────────────────────────────
 server.listen(PORT, () => {
   console.log(`[Park & Fly WhatsApp Bridge] listening on http://localhost:${PORT}`);
+  console.log(`[Park & Fly WhatsApp Bridge] Ready to accept connections`);
+});
+
+// Keep the process alive even if no connections
+process.on('SIGTERM', () => {
+  console.log('[Park & Fly WhatsApp Bridge] SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('[Park & Fly WhatsApp Bridge] Process terminated');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('[Park & Fly WhatsApp Bridge] SIGINT received, shutting down gracefully');
+  server.close(() => {
+    console.log('[Park & Fly WhatsApp Bridge] Process terminated');
+    process.exit(0);
+  });
 });
