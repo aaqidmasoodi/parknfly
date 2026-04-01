@@ -29,25 +29,24 @@ class WhatsAppManager {
     console.log("[WhatsApp] Platform:", process.platform);
     console.log("[WhatsApp] Node version:", process.version);
 
-    try {
-      this.client = new Client({
-        authStrategy: new LocalAuth({ dataPath: sessionPath }),
-        puppeteer: {
-          headless: true,
-          args: [
-            "--no-sandbox",
-            "--disable-setuid-sandbox",
-            "--disable-dev-shm-usage",
-            "--disable-gpu",
-            "--no-zygote",
-          ],
-          executablePath: process.env.CHROME_BIN || undefined,
-        },
-        webVersionCache: {
-          type: "remote",
-          remotePath: "https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html",
-        },
-      });
+    this.client = new Client({
+      authStrategy: new LocalAuth({ dataPath: sessionPath }),
+      puppeteer: {
+        headless: true,
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-gpu",
+          "--no-zygote",
+        ],
+        executablePath: process.env.CHROME_BIN || undefined,
+      },
+      webVersionCache: {
+        type: "remote",
+        remotePath: "https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html",
+      },
+    });
 
     this.client.on("qr", async (qr) => {
       try {
@@ -90,7 +89,7 @@ class WhatsAppManager {
     this.status = "connecting";
     this.broadcast({ type: "status", status: "connecting" });
     console.log("[WhatsApp] Initializing client…");
-    
+
     this.client.initialize()
       .then(() => console.log("[WhatsApp] Client initialized successfully"))
       .catch(err => {
