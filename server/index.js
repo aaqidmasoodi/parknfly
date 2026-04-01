@@ -20,7 +20,7 @@ const http = require("http");
 const { WebSocketServer } = require("ws");
 const { WhatsAppManager } = require("./whatsapp");
 
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 const app = express();
 app.use(express.json());
 
