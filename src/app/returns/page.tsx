@@ -2,13 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { useBookings } from "@/lib/store";
+import { useSettings } from "@/lib/settings-store";
 import { Booking, BookingStatus } from "@/lib/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { BookingDetailSheet } from "@/components/BookingDetailSheet";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { isToday, isPast, format } from "date-fns";
+import { isToday, isPast, format, addMinutes } from "date-fns";
 import {
   Search,
   RotateCcw,
@@ -21,15 +22,19 @@ import {
 
 export default function ReturnsPage() {
   const { bookings, loaded, dispatchShuttle, completeBooking } = useBookings();
+  const { settings } = useSettings();
   const [search, setSearch] = useState("");
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
   // Active returns: Due today OR overdue, and NOT checked out, NOT cancelled, NOT just booked
   const activeReturns = useMemo(() => {
+    // A return is overdue if it's past the return time by more than the configured hours
+    const overdueThreshold = addMinutes(new Date(), -settings.overdueReturnHours * 60);
+    
     let result = bookings.filter((b) => {
       const returnDate = new Date(b.returnDate);
-      const isDue = isToday(returnDate) || isPast(returnDate);
+      const isDue = isToday(returnDate) || returnDate < overdueThreshold;
       const isActiveState =
         b.status === BookingStatus.CHECKED_IN ||
         b.status === BookingStatus.PARKED ||
@@ -140,8 +145,9 @@ export default function ReturnsPage() {
               activeReturns.map((booking) => {
                 const isRequested = booking.status === BookingStatus.RETURN_REQUESTED;
                 const isDispatched = booking.status === BookingStatus.SHUTTLE_DISPATCHED;
+                const overdueThreshold = addMinutes(new Date(), -settings.overdueReturnHours * 60);
                 const isOverdue =
-                  isPast(new Date(booking.returnDate)) && !isRequested && !isDispatched;
+                  new Date(booking.returnDate) < overdueThreshold && !isRequested && !isDispatched;
 
                 return (
                   <Card

@@ -1,6 +1,7 @@
 "use client";
 
 import { useBookings } from "@/lib/store";
+import { useSettings } from "@/lib/settings-store";
 import { BookingStatus } from "@/lib/types";
 import { CSVImportDialog } from "@/components/CSVImportDialog";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -15,7 +16,7 @@ import {
   Clock,
   CheckCircle2,
 } from "lucide-react";
-import { format, isToday, isPast, addHours, isWithinInterval } from "date-fns";
+import { format, isToday, isPast, addHours, isWithinInterval, addMinutes } from "date-fns";
 import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {
@@ -27,6 +28,7 @@ export default function DashboardPage() {
     getCarsOnLot,
     checkIn,
   } = useBookings();
+  const { settings } = useSettings();
 
   if (!loaded) {
     return (
@@ -53,9 +55,11 @@ export default function DashboardPage() {
       b.status !== BookingStatus.BOOKED
   ).length;
 
+  // A return is overdue if it's past the return time by more than the configured hours
+  const overdueThreshold = addMinutes(new Date(), -settings.overdueReturnHours * 60);
   const overdueReturns = bookings.filter(
     (b) =>
-      isPast(new Date(b.returnDate)) &&
+      new Date(b.returnDate) < overdueThreshold &&
       b.status !== BookingStatus.COMPLETED &&
       b.status !== BookingStatus.NO_SHOW &&
       b.status !== BookingStatus.BOOKED

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -23,85 +24,163 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const { status } = useWhatsApp();
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <aside className="hidden md:flex flex-col w-72 border-r border-border/40 bg-card/60 backdrop-blur-md h-full z-20">
-      <div className="flex items-center justify-center px-6 h-28 border-b border-border/40 shrink-0">
-        <Image
-          src="/park-and-fly-logo.jpg"
-          alt="Park & Fly"
-          width={280}
-          height={100}
-          className="h-24 w-auto object-contain"
-          priority
-        />
-      </div>
-
-      <nav className="flex flex-col gap-1.5 p-3 flex-1">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 group relative overflow-hidden",
-                isActive
-                  ? "text-primary shadow-[0_0_12px_rgba(var(--primary),0.2)] bg-primary/10"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-              )}
-            >
-              {isActive && (
-                <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-primary animate-slide-in" />
-              )}
-              <item.icon className={cn("h-4 w-4 z-10 transition-colors", isActive ? "text-primary" : "opacity-70 group-hover:opacity-100")} />
-              <span className="z-10">{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Bottom: Settings + WA status */}
-      <div className="p-3 border-t border-border/40 space-y-1">
-        <div className="flex items-center justify-between px-3 py-2">
-          <span className="text-[11px] font-medium text-muted-foreground">Theme</span>
-          <ThemeToggle />
+    <>
+      {/* Fixed-width container to prevent layout shift */}
+      <aside className="hidden md:flex flex-col w-20 border-r border-border/40 bg-card/60 backdrop-blur-md h-full z-20 shrink-0">
+        <div className="flex items-center justify-center px-2 h-28 border-b border-border/40 shrink-0">
+          <Image
+            src="/park-and-fly-logo.jpg"
+            alt="Park & Fly"
+            width={40}
+            height={40}
+            className="h-10 w-10 rounded-lg object-contain"
+            priority
+          />
         </div>
-        <Link
-          href="/settings#messages-section"
-          className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all duration-200 group relative"
-        >
-          <MessageCircle className="h-4 w-4 opacity-70 group-hover:opacity-100" />
-          Messages
-        </Link>
-        <Link
-          href="/settings"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 group relative overflow-hidden",
-            pathname === "/settings"
-              ? "text-primary shadow-[0_0_12px_rgba(var(--primary),0.2)] bg-primary/10"
-              : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-          )}
-        >
-          {pathname === "/settings" && (
-            <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-primary animate-slide-in" />
-          )}
-          <Settings className={cn("h-4 w-4 z-10 transition-colors", pathname === "/settings" ? "text-primary" : "opacity-70 group-hover:opacity-100")} />
-          <span className="z-10">Settings</span>
-          
-          <span className="ml-auto flex items-center gap-1 z-10 relative">
-            {status === "connected" ? (
-              <span title="WhatsApp connected" className="flex items-center justify-center w-5 h-5 rounded-full bg-[#25D366]/10 text-[#25D366]">
-                <MessageCircle className="h-2.5 w-2.5" />
-                <span className="absolute top-0 right-0 w-1.5 h-1.5 rounded-full bg-[#25D366] border border-card shadow-[0_0_6px_#25D366]" />
-              </span>
-            ) : status === "qr_ready" || status === "connecting" ? (
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shadow-[0_0_8px_#fbbf24]" />
-            ) : null}
-          </span>
-        </Link>
+
+        <nav className="flex flex-col gap-1.5 p-3 flex-1">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center justify-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 group relative overflow-hidden",
+                  isActive
+                    ? "text-primary shadow-[0_0_12px_rgba(var(--primary),0.2)] bg-primary/10"
+                    : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                )}
+                title={item.label}
+              >
+                {isActive && (
+                  <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-primary animate-slide-in" />
+                )}
+                <item.icon className={cn("h-4 w-4 z-10 transition-colors shrink-0", isActive ? "text-primary" : "opacity-70 group-hover:opacity-100")} />
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Bottom: Settings + WA status */}
+        <div className="p-3 border-t border-border/40 space-y-1">
+          <div className="flex items-center justify-center px-2 py-2">
+            <ThemeToggle />
+          </div>
+          <Link
+            href="/settings#messages-section"
+            className="flex items-center justify-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all duration-200 group relative"
+            title="Messages"
+          >
+            <MessageCircle className="h-4 w-4 opacity-70 group-hover:opacity-100 shrink-0" />
+          </Link>
+          <Link
+            href="/settings"
+            className={cn(
+              "flex items-center justify-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 group relative overflow-hidden",
+              pathname === "/settings"
+                ? "text-primary shadow-[0_0_12px_rgba(var(--primary),0.2)] bg-primary/10"
+                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+            )}
+            title="Settings"
+          >
+            {pathname === "/settings" && (
+              <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-primary animate-slide-in" />
+            )}
+            <Settings className={cn("h-4 w-4 z-10 transition-colors shrink-0", pathname === "/settings" ? "text-primary" : "opacity-70 group-hover:opacity-100")} />
+          </Link>
+        </div>
+      </aside>
+
+      {/* Overlay sidebar that appears on hover */}
+      <div
+        className={cn(
+          "hidden md:flex flex-col border-r border-border/40 bg-card/95 backdrop-blur-xl h-full z-30 transition-all duration-300 ease-in-out absolute top-0 left-0 shadow-2xl",
+          isHovered ? "w-72 opacity-100" : "w-72 opacity-0 pointer-events-none"
+        )}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <div className="flex items-center px-6 h-28 border-b border-border/40 shrink-0">
+          <Image
+            src="/park-and-fly-logo.jpg"
+            alt="Park & Fly"
+            width={280}
+            height={100}
+            className="h-24 w-auto object-contain"
+            priority
+          />
+        </div>
+
+        <nav className="flex flex-col gap-1.5 p-3 flex-1">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 group relative overflow-hidden",
+                  isActive
+                    ? "text-primary shadow-[0_0_12px_rgba(var(--primary),0.2)] bg-primary/10"
+                    : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                )}
+              >
+                {isActive && (
+                  <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-primary animate-slide-in" />
+                )}
+                <item.icon className={cn("h-4 w-4 z-10 transition-colors shrink-0", isActive ? "text-primary" : "opacity-70 group-hover:opacity-100")} />
+                <span className="z-10">{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Bottom: Settings + WA status */}
+        <div className="p-3 border-t border-border/40 space-y-1">
+          <div className="flex items-center justify-between px-3 py-2">
+            <span className="text-[11px] font-medium text-muted-foreground">Theme</span>
+            <ThemeToggle />
+          </div>
+          <Link
+            href="/settings#messages-section"
+            className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all duration-200 group relative"
+          >
+            <MessageCircle className="h-4 w-4 opacity-70 group-hover:opacity-100" />
+            Messages
+          </Link>
+          <Link
+            href="/settings"
+            className={cn(
+              "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 group relative overflow-hidden",
+              pathname === "/settings"
+                ? "text-primary shadow-[0_0_12px_rgba(var(--primary),0.2)] bg-primary/10"
+                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+            )}
+          >
+            {pathname === "/settings" && (
+              <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-primary animate-slide-in" />
+            )}
+            <Settings className={cn("h-4 w-4 z-10 transition-colors", pathname === "/settings" ? "text-primary" : "opacity-70 group-hover:opacity-100")} />
+            <span className="z-10">Settings</span>
+
+            <span className="ml-auto flex items-center gap-1 z-10 relative shrink-0">
+              {status === "connected" ? (
+                <span title="WhatsApp connected" className="flex items-center justify-center w-5 h-5 rounded-full bg-[#25D366]/10 text-[#25D366]">
+                  <MessageCircle className="h-2.5 w-2.5" />
+                  <span className="absolute top-0 right-0 w-1.5 h-1.5 rounded-full bg-[#25D366] border border-card shadow-[0_0_6px_#25D366]" />
+                </span>
+              ) : status === "qr_ready" || status === "connecting" ? (
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shadow-[0_0_8px_#fbbf24]" />
+              ) : null}
+            </span>
+          </Link>
+        </div>
       </div>
-    </aside>
+    </>
   );
 }
 

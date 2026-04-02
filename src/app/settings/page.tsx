@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useWhatsApp } from "@/lib/whatsapp-context";
+import { useSettings } from "@/lib/settings-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -18,8 +19,11 @@ import {
   AlertTriangle,
   CheckCircle2,
   Settings as SettingsIcon,
+  Clock,
+  RotateCcw,
 } from "lucide-react";
 import Image from "next/image";
+import { Label } from "@/components/ui/label";
 
 const STATUS_CONFIG = {
   disconnected: {
@@ -61,6 +65,7 @@ const STATUS_CONFIG = {
 
 export default function SettingsPage() {
   const { status, qrCode, isConnected, connect, disconnect, sendMessage } = useWhatsApp();
+  const { settings, updateSetting } = useSettings();
   const [testPhone, setTestPhone] = useState("0870376567");
   const [isSending, setIsSending] = useState(false);
 
@@ -238,6 +243,45 @@ export default function SettingsPage() {
 
             {/* Right column - Sidebar */}
             <div className="space-y-6">
+              {/* Return Settings */}
+              <Card className="glass-card shadow-lg border-border/50">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <RotateCcw className="h-4 w-4 text-amber-500" />
+                    Return Settings
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Configure return behavior and thresholds.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="overdue-hours" className="text-xs font-medium">
+                        Overdue Return Threshold
+                      </Label>
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span className="font-mono font-bold text-primary">{settings.overdueReturnHours}h</span>
+                      </div>
+                    </div>
+                    <Input
+                      id="overdue-hours"
+                      type="number"
+                      min="0"
+                      max="24"
+                      step="0.5"
+                      value={settings.overdueReturnHours}
+                      onChange={(e) => updateSetting("overdueReturnHours", Math.max(0, Math.min(24, parseFloat(e.target.value) || 0)))}
+                      className="bg-background/50 border-border/50 h-9"
+                    />
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      A return is classified as overdue if it is more than {settings.overdueReturnHours} hours late. For example, if a customer was supposed to return at 1 PM but comes at 5 PM with a 4-hour threshold, that&apos;s an overdue return.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Danger Zone */}
               <Card className="border-destructive/30 bg-destructive/5 shadow-none overflow-hidden group">
                 <div className="h-1 bg-gradient-to-r from-destructive/40 to-destructive"></div>

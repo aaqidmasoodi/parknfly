@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { BookingProvider } from "@/lib/store";
 import { MessageStoreProvider } from "@/lib/message-store";
+import { SettingsProvider } from "@/lib/settings-store";
 import { WhatsAppProvider } from "@/lib/whatsapp-context";
 import { Sidebar, MobileNav } from "@/components/Sidebar";
 import { Toaster } from "@/components/ui/sonner";
@@ -45,12 +46,14 @@ export default function RootLayout({
           <WhatsAppProvider>
             <BookingProvider>
               <MessageStoreProvider>
-                <Sidebar />
-                <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                  {children}
-                </main>
-                <MobileNav />
-                <Toaster richColors position="bottom-right" />
+                <SettingsProvider>
+                  <Sidebar />
+                  <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                    {children}
+                  </main>
+                  <MobileNav />
+                  <Toaster richColors position="bottom-right" />
+                </SettingsProvider>
               </MessageStoreProvider>
             </BookingProvider>
           </WhatsAppProvider>
