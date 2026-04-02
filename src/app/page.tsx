@@ -16,7 +16,7 @@ import {
   Clock,
   CheckCircle2,
 } from "lucide-react";
-import { format, isToday, isPast } from "date-fns";
+import { format, isToday, isPast, addHours, isWithinInterval } from "date-fns";
 import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {
@@ -64,11 +64,15 @@ export default function DashboardPage() {
       b.status !== BookingStatus.BOOKED
   );
 
+  // Show only bookings within the 1-hour window (from 1 hour ago up to 1 hour ahead)
+  const now = new Date();
+  const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+  const oneHourFromNow = addHours(now, 1);
   const expectedOrLateArrivals = bookings
     .filter(
       (b) =>
         b.status === BookingStatus.BOOKED &&
-        (isToday(new Date(b.entryDate)) || isPast(new Date(b.entryDate)))
+        isWithinInterval(new Date(b.entryDate), { start: oneHourAgo, end: oneHourFromNow })
     )
     .sort((a, b) => new Date(a.entryDate).getTime() - new Date(b.entryDate).getTime());
 

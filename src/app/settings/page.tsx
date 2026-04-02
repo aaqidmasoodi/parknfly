@@ -88,176 +88,210 @@ export default function SettingsPage() {
       </header>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="p-6 max-w-3xl mx-auto space-y-8 pb-20 md:pb-12 animate-fade-in-up">
+        <div className="p-8 max-w-6xl mx-auto pb-20 md:pb-8 animate-fade-in-up">
           
-          {/* WhatsApp Connection Card */}
-          <Card className="glass-card shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <MessageCircle className="h-4 w-4 text-[#25D366]" />
-                WhatsApp Integration
-              </CardTitle>
-              <CardDescription>
-                Connect the operations hub to WhatsApp to send automated check-in
-                confirmations, shuttle alerts, and return reminders.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              
-              {/* Status row bg */}
-              <div className="bg-muted/30 rounded-xl p-4 border border-border/50">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className={`w-2 h-2 rounded-full shrink-0 ${cfg.dot} ${status === "connected" ? "animate-glow" : ""}`} />
-                    <div>
-                      <p className={`text-sm font-medium ${cfg.color}`}>{cfg.label}</p>
-                      <p className="text-xs text-muted-foreground max-w-[260px] leading-relaxed mt-0.5">{cfg.description}</p>
+          {/* Two-column layout for desktop */}
+          <div className="grid lg:grid-cols-3 gap-6">
+            
+            {/* Left column - WhatsApp Connection */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* WhatsApp Connection Card */}
+              <Card className="glass-card shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <MessageCircle className="h-4 w-4 text-[#25D366]" />
+                    WhatsApp Integration
+                  </CardTitle>
+                  <CardDescription>
+                    Connect to send automated check-in confirmations, shuttle alerts, and return reminders.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+
+                  {/* Status row bg */}
+                  <div className="bg-muted/30 rounded-xl p-4 border border-border/50">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${cfg.dot} ${status === "connected" ? "animate-glow" : ""}`} />
+                        <div>
+                          <p className={`text-sm font-medium ${cfg.color}`}>{cfg.label}</p>
+                          <p className="text-xs text-muted-foreground max-w-[260px] leading-relaxed mt-0.5">{cfg.description}</p>
+                        </div>
+                      </div>
+                      <StatusIcon
+                        className={`h-5 w-5 shrink-0 ${cfg.color} ${status === "connecting" ? "animate-spin" : ""}`}
+                      />
                     </div>
                   </div>
-                  <StatusIcon
-                    className={`h-5 w-5 shrink-0 ${cfg.color} ${status === "connecting" ? "animate-spin" : ""}`}
-                  />
-                </div>
-              </div>
 
-              {/* QR Code display */}
-              {status === "qr_ready" && qrCode && (
-                <div className="flex flex-col items-center gap-3 p-6 rounded-xl border bg-card/50 shadow-inner animate-slide-in">
-                  <div className="p-3 bg-white rounded-xl shadow-sm">
-                    <Image
-                      src={qrCode}
-                      alt="WhatsApp QR Code"
-                      width={220}
-                      height={220}
-                      className="rounded-md"
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground text-center">
-                    This QR code will expire in ~60 seconds. Click "Refresh" if it expires.
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-2 mt-2"
-                    onClick={() => { disconnect(); setTimeout(connect, 500); }}
-                  >
-                    <RefreshCw className="h-3.5 w-3.5" />
-                    Refresh QR
-                  </Button>
-                </div>
-              )}
+                  {/* QR Code display */}
+                  {status === "qr_ready" && qrCode && (
+                    <div className="flex flex-col items-center gap-3 p-6 rounded-xl border bg-card/50 shadow-inner animate-slide-in">
+                      <div className="p-3 bg-white rounded-xl shadow-sm">
+                        <Image
+                          src={qrCode}
+                          alt="WhatsApp QR Code"
+                          width={220}
+                          height={220}
+                          className="rounded-md"
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground text-center">
+                        This QR code will expire in ~60 seconds. Click "Refresh" if it expires.
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2 mt-2"
+                        onClick={() => { disconnect(); setTimeout(connect, 500); }}
+                      >
+                        <RefreshCw className="h-3.5 w-3.5" />
+                        Refresh QR
+                      </Button>
+                    </div>
+                  )}
 
-              {/* Action buttons */}
-              <div className="flex gap-2">
-                {!isConnected && status !== "qr_ready" && (
-                  <Button
-                    onClick={connect}
-                    disabled={status === "connecting"}
-                    className="gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md border-0"
-                  >
-                    {status === "connecting" ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Wifi className="h-4 w-4" />
+                  {/* Action buttons */}
+                  <div className="flex gap-2">
+                    {!isConnected && status !== "qr_ready" && (
+                      <Button
+                        onClick={connect}
+                        disabled={status === "connecting"}
+                        className="gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md border-0"
+                      >
+                        {status === "connecting" ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Wifi className="h-4 w-4" />
+                        )}
+                        {status === "connecting" ? "Connecting…" : "Connect WhatsApp"}
+                      </Button>
                     )}
-                    {status === "connecting" ? "Connecting…" : "Connect WhatsApp"}
-                  </Button>
-                )}
-                {(isConnected || status === "qr_ready") && (
-                  <Button variant="outline" onClick={disconnect} className="gap-2 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 border-border/50">
-                    <WifiOff className="h-4 w-4" />
-                    Disconnect
-                  </Button>
-                )}
-              </div>
-
-              {isConnected && (
-                <div className="space-y-3 pt-4 border-t border-border/50 animate-slide-in">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Test Connection
-                  </p>
-                  <div className="flex gap-2 items-center">
-                    <Input
-                      value={testPhone}
-                      onChange={(e) => setTestPhone(e.target.value)}
-                      placeholder="e.g. 0851234567"
-                      className="max-w-[200px] bg-background/50"
-                    />
-                    <Button
-                      onClick={handleTestMessage}
-                      disabled={isSending || !testPhone}
-                      variant="secondary"
-                      className="shadow-sm border border-border/50"
-                    >
-                      {isSending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                      Send Test
-                    </Button>
+                    {(isConnected || status === "qr_ready") && (
+                      <Button variant="outline" onClick={disconnect} className="gap-2 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 border-border/50">
+                        <WifiOff className="h-4 w-4" />
+                        Disconnect
+                      </Button>
+                    )}
                   </div>
-                  <p className="text-[11px] text-muted-foreground">
-                    Send a test message to this number to verify it works.
-                  </p>
-                </div>
-              )}
 
-              {/* Backend requirement note */}
-              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-500 space-y-1.5 shadow-sm">
-                <p className="font-semibold flex items-center gap-1.5">
-                  <AlertTriangle className="h-3.5 w-3.5" />
-                  Requires the WhatsApp Bridge server
-                </p>
-                <p className="text-amber-500/80 leading-relaxed">
-                  Run <code className="font-mono bg-black/20 dark:bg-black/40 px-1.5 py-0.5 rounded ml-0.5">node server/index.js</code> in a separate terminal
-                  to enable automated sending. Without it, buttons will fallback to opening WhatsApp Web (click-to-chat).
-                </p>
-              </div>
+                  {isConnected && (
+                    <div className="space-y-3 pt-4 border-t border-border/50 animate-slide-in">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Test Connection
+                      </p>
+                      <div className="flex gap-2 items-center">
+                        <Input
+                          value={testPhone}
+                          onChange={(e) => setTestPhone(e.target.value)}
+                          placeholder="e.g. 0851234567"
+                          className="max-w-[200px] bg-background/50"
+                        />
+                        <Button
+                          onClick={handleTestMessage}
+                          disabled={isSending || !testPhone}
+                          variant="secondary"
+                          className="shadow-sm border border-border/50"
+                        >
+                          {isSending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                          Send Test
+                        </Button>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Send a test message to this number to verify it works.
+                      </p>
+                    </div>
+                  )}
 
-            </CardContent>
-          </Card>
+                  {/* Connection status note */}
+                  {isConnected && (
+                    <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-xs text-emerald-600 dark:text-emerald-400 space-y-1.5 shadow-sm">
+                      <p className="font-semibold flex items-center gap-1.5">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        WhatsApp Bridge Connected
+                      </p>
+                      <p className="text-emerald-600/80 dark:text-emerald-400/80 leading-relaxed">
+                        Automated messages are enabled. Messages will be sent directly through WhatsApp Web.
+                      </p>
+                    </div>
+                  )}
 
-          {/* Customizable Message Templates */}
-          <div className="scroll-mt-20" id="messages-section">
-            <Card className="glass-card shadow-lg hover:shadow-xl transition-shadow duration-300">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <MessageCircle className="h-4 w-4 text-primary" />
-                  Custom Message Templates
-                </CardTitle>
-                <CardDescription>
-                  Configure the exact wording and images sent to customers for each action.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <MessageTemplateList />
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+
+              {/* Customizable Message Templates */}
+              <Card className="glass-card shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <MessageCircle className="h-4 w-4 text-primary" />
+                    Custom Message Templates
+                  </CardTitle>
+                  <CardDescription>
+                    Configure the exact wording and images sent to customers for each action.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <MessageTemplateList />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right column - Sidebar */}
+            <div className="space-y-6">
+              {/* Danger Zone */}
+              <Card className="border-destructive/30 bg-destructive/5 shadow-none overflow-hidden group">
+                <div className="h-1 bg-gradient-to-r from-destructive/40 to-destructive"></div>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm text-destructive flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    Danger Zone
+                  </CardTitle>
+                  <CardDescription className="text-destructive/80 text-xs">
+                    Destructive actions that permanently remove data.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                  <div className="space-y-3">
+                    <div className="bg-destructive/10 rounded-lg p-3 border border-destructive/20">
+                      <p className="text-xs font-medium text-destructive mb-1">Wipe All Data</p>
+                      <p className="text-[11px] text-destructive/80 leading-relaxed mb-2">
+                        Permanently delete all bookings, message templates, and settings from this browser.
+                      </p>
+                      <ResetDialog />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Info Card */}
+              <Card className="glass-card shadow-lg border-border/50">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold">Quick Tips</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-start gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Scan the QR code with WhatsApp on your phone to enable automated messaging.
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Message templates support placeholders like {"{{name}}"}, {"{{ref}}"}, and {"{{vehicle}}"} for personalization.
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      All data is stored locally in your browser and never leaves your device.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
           </div>
-
-          {/* Danger Zone */}
-          <div className="pt-4">
-            <Card className="border-destructive/30 bg-destructive/5 shadow-none overflow-hidden group">
-              <div className="h-1 bg-gradient-to-r from-destructive/40 to-destructive"></div>
-              <CardHeader>
-                <CardTitle className="text-base text-destructive flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4" />
-                  Danger Zone
-                </CardTitle>
-                <CardDescription className="text-destructive/80">
-                  Destructive actions that permanently remove data from your device.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex items-center justify-between p-4 bg-destructive/10 m-4 rounded-xl border border-destructive/20">
-                <div className="space-y-1 mr-4">
-                  <p className="text-sm font-medium text-destructive">Wipe Dashboard Data</p>
-                  <p className="text-xs text-destructive/80 leading-relaxed">
-                    Permanently delete all bookings, message templates, and settings. 
-                    This will clear the current browser session.
-                  </p>
-                </div>
-                <ResetDialog />
-              </CardContent>
-            </Card>
-          </div>
-
         </div>
       </div>
     </div>
