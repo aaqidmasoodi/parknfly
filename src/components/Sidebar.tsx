@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   CarFront,
   RotateCcw,
-  PlaneTakeoff,
   Settings,
   MessageCircle,
 } from "lucide-react";
@@ -26,11 +26,15 @@ export function Sidebar() {
 
   return (
     <aside className="hidden md:flex flex-col w-56 border-r border-border/40 bg-card/60 backdrop-blur-md h-full z-20">
-      <div className="flex items-center gap-2.5 px-4 h-14 border-b border-border/40 shrink-0">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-md">
-          <PlaneTakeoff className="h-4 w-4 text-white" />
-        </div>
-        <span className="font-semibold text-sm tracking-tight gradient-text">Park &amp; Fly</span>
+      <div className="flex items-center justify-center px-4 h-14 border-b border-border/40 shrink-0">
+        <Image
+          src="/park-and-fly-logo.jpg"
+          alt="Park & Fly"
+          width={120}
+          height={40}
+          className="h-10 w-auto object-contain"
+          priority
+        />
       </div>
 
       <nav className="flex flex-col gap-1.5 p-3 flex-1">
@@ -128,6 +132,16 @@ export function MobileNav() {
           );
         })}
       </nav>
+      <div className="md:hidden fixed top-4 left-1/2 -translate-x-1/2 z-50">
+        <Image
+          src="/park-and-fly-logo.jpg"
+          alt="Park & Fly"
+          width={100}
+          height={36}
+          className="h-9 w-auto object-contain"
+          priority
+        />
+      </div>
       <div className="md:hidden fixed bottom-20 right-4 z-50">
         <ThemeToggle />
       </div>
