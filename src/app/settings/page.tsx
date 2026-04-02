@@ -68,7 +68,7 @@ export default function SettingsPage() {
     if (!testPhone) return;
     setIsSending(true);
     try {
-      await sendMessage(testPhone, "👋 Hello from Park & Fly! This is a test message to verify the WhatsApp integration is working perfectly.");
+      await sendMessage(testPhone, "Hello from Park & Fly. This is a test message to verify the WhatsApp integration is working perfectly.");
       alert("Test message sent successfully!");
     } catch (err: any) {
       alert(err.message || "Failed to send test message");

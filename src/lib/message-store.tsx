@@ -35,27 +35,27 @@ const DEFAULT_TEMPLATES: MessageTemplate[] = [
   {
     id: "check_in_confirmed",
     name: "Check-In Confirmed",
-    body: `Hi {{name}}! ✅ Your vehicle ({{vehicle}}, {{reg}}) has been safely checked in at Park & Fly. Reference: *{{ref}}*. We'll be ready for your return on {{returnDate}} at {{returnTime}}. Safe travels! ✈️`,
+    body: `Hi {{name}}. Your vehicle ({{vehicle}}, {{reg}}) has been safely checked in at Park & Fly. Reference: {{ref}}. We will be ready for your return on {{returnDate}} at {{returnTime}}. Safe travels.`,
   },
   {
     id: "shuttle_dispatched",
     name: "Shuttle Dispatched",
-    body: `Hi {{name}}! 🚐 Your shuttle has been dispatched to *{{terminal}}*. Please make your way to the pickup point. Booking ref: *{{ref}}*.`,
+    body: `Hi {{name}}. Your shuttle has been dispatched to {{terminal}}. Please make your way to the pickup point. Booking ref: {{ref}}.`,
   },
   {
     id: "return_reminder",
     name: "Return Reminder",
-    body: `Hi {{name}}! 👋 Your vehicle ({{vehicle}}, *{{reg}}*) is ready for collection at Park & Fly. Please let us know your estimated arrival time so we can have everything ready. Ref: *{{ref}}*.`,
+    body: `Hi {{name}}. Your vehicle ({{vehicle}}, {{reg}}) is ready for collection at Park & Fly. Please let us know your estimated arrival time so we can have everything ready. Ref: {{ref}}.`,
   },
   {
     id: "late_arrival_nudge",
     name: "Late Arrival Nudge",
-    body: `Hi {{name}}, we noticed your Park & Fly booking (*{{ref}}*) was scheduled for {{entryTime}} today. Are you still on your way? Please let us know so we can hold your spot. 🅿️`,
+    body: `Hi {{name}}, we noticed your Park & Fly booking ({{ref}}) was scheduled for {{entryTime}} today. Are you still on your way? Please let us know so we can hold your spot.`,
   },
   {
     id: "return_completed",
     name: "Return Completed",
-    body: `Hi {{name}}! 🎉 Your vehicle ({{reg}}) has been successfully returned. Thank you for choosing Park & Fly. We hope to see you again! ⭐`,
+    body: `Hi {{name}}. Your vehicle ({{reg}}) has been successfully returned. Thank you for choosing Park & Fly. We hope to see you again.`,
   },
 ];
 
