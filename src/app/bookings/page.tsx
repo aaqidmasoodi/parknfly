@@ -56,10 +56,19 @@ export default function BookingsPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const copyBookingDetails = (booking: Booking) => {
-    const details = `${booking.bookingRef} - ${booking.customerName} (${booking.passengers} passenger${booking.passengers !== 1 ? "s" : ""})`;
+    // Format: BookingID Name Phone EntryDate EntryTime ReturnDate ReturnTime VehicleMake VehicleModel VehicleColour VehicleReg PR Passengers
+    // Example: GO-DUB-243186 Kenneth baird 07835333287 01-Apr-2026 10:30:00 06-Apr-2026 12:00:00 BMW 330i Black XUI3516 PR 1
+    const entryDate = new Date(booking.entryDate);
+    const returnDate = new Date(booking.returnDate);
+    
+    const entryDateStr = format(entryDate, "dd-MMM-yyyy HH:mm:ss");
+    const returnDateStr = format(returnDate, "dd-MMM-yyyy HH:mm:ss");
+    
+    const details = `${booking.bookingRef} ${booking.customerName} ${booking.customerPhone} ${entryDateStr} ${returnDateStr} ${booking.vehicle.make} ${booking.vehicle.model} ${booking.vehicle.colour} ${booking.vehicle.reg} PR ${booking.passengers}`;
+    
     navigator.clipboard.writeText(details);
     toast.success("Booking details copied", {
-      description: details,
+      description: `Copied: ${booking.bookingRef} - ${booking.customerName}`,
     });
   };
 

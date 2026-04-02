@@ -11,7 +11,6 @@ import {
   CarFront,
   CalendarClock,
   RotateCcw,
-  DollarSign,
   AlertTriangle,
   Clock,
   CheckCircle2,
@@ -26,7 +25,6 @@ export default function DashboardPage() {
     getTodaysArrivals,
     getTodaysReturns,
     getCarsOnLot,
-    getTodaysRevenue,
     checkIn,
   } = useBookings();
 
@@ -41,7 +39,6 @@ export default function DashboardPage() {
   const todaysArrivals = getTodaysArrivals();
   const todaysReturns = getTodaysReturns();
   const carsOnLot = getCarsOnLot();
-  const todaysRevenue = getTodaysRevenue();
 
   const expectedCount = todaysArrivals.filter(
     (b) => b.status === BookingStatus.BOOKED
@@ -106,7 +103,7 @@ export default function DashboardPage() {
           ) : (
             <>
               {/* Stats Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                 <Card className="glass-card border-border/50 shadow-md hover:shadow-lg transition-all duration-300 relative overflow-hidden group">
                   <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-400 to-indigo-600"></div>
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -164,66 +161,7 @@ export default function DashboardPage() {
                     )}
                   </CardContent>
                 </Card>
-
-                <Card className="glass-card border-border/50 shadow-md hover:shadow-lg transition-all duration-300 relative overflow-hidden group">
-                  <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-purple-400 to-pink-500"></div>
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Revenue Today
-                    </CardTitle>
-                    <div className="p-1.5 rounded-md bg-purple-500/10 text-purple-400 group-hover:scale-110 transition-transform">
-                      <DollarSign className="h-4 w-4" />
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">
-                      €{todaysRevenue.toFixed(0)}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1 font-medium">
-                      from {todaysArrivals.length} bookings
-                    </p>
-                  </CardContent>
-                </Card>
               </div>
-
-              {/* Alerts */}
-              {overdueReturns.length > 0 && (
-                <div className="animate-slide-in">
-                  <Card className="border border-destructive/30 bg-destructive/5 shadow-none overflow-hidden">
-                    <div className="h-1 w-full bg-gradient-to-r from-destructive/40 to-destructive"></div>
-                    <CardHeader className="pb-3 px-5 pt-4">
-                      <CardTitle className="text-sm font-semibold flex items-center gap-2 text-destructive">
-                        <AlertTriangle className="h-4 w-4" />
-                        Critical: Overdue Returns ({overdueReturns.length})
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-5 pb-5">
-                      <div className="space-y-2">
-                        {overdueReturns.slice(0, 5).map((b) => (
-                          <div
-                            key={b.id}
-                            className="flex items-center justify-between text-sm bg-destructive/10 rounded-lg p-2.5 border border-destructive/10"
-                          >
-                            <div>
-                              <span className="font-semibold text-destructive">{b.customerName}</span>
-                              <span className="text-destructive/60 mx-2">—</span>
-                              <span className="font-mono text-xs font-medium">
-                                {b.vehicle.reg}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <StatusBadge status={b.status} />
-                              <span className="text-xs font-medium text-destructive/80 shrink-0">
-                                Due {format(new Date(b.returnDate), "HH:mm")}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
 
               <div className="grid md:grid-cols-2 gap-6">
                 {/* Awaiting Check-in */}
@@ -360,6 +298,93 @@ export default function DashboardPage() {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Alerts - Overdue Returns */}
+              {overdueReturns.length > 0 && (
+                <Card className="border-destructive/30 bg-destructive/5 shadow-lg overflow-hidden animate-slide-in">
+                  <div className="h-1 w-full bg-gradient-to-r from-destructive/50 via-destructive to-destructive/50"></div>
+                  <CardHeader className="pb-3 px-6 pt-4">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-semibold flex items-center gap-2 text-destructive">
+                        <div className="p-1.5 rounded-md bg-destructive/10">
+                          <AlertTriangle className="h-4 w-4" />
+                        </div>
+                        Overdue Returns
+                        <span className="ml-2 text-xs font-bold text-destructive bg-destructive/15 border border-destructive/20 px-2 py-0.5 rounded-full">
+                          {overdueReturns.length}
+                        </span>
+                      </CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="px-6 pb-4">
+                    <div className="grid gap-2">
+                      {overdueReturns.slice(0, 8).map((b) => {
+                        const minutesOverdue = Math.floor(
+                          (new Date().getTime() - new Date(b.returnDate).getTime()) / 60000
+                        );
+                        const isCriticallyLate = minutesOverdue > 60;
+                        return (
+                          <div
+                            key={b.id}
+                            className={`flex items-center justify-between p-3 rounded-lg border ${
+                              isCriticallyLate
+                                ? "bg-destructive/15 border-destructive/30"
+                                : "bg-destructive/10 border-destructive/20"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div className={`w-2 h-2 rounded-full shrink-0 ${
+                                isCriticallyLate ? "bg-destructive animate-pulse" : "bg-amber-500"
+                              }`} />
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className={`font-semibold text-sm truncate ${
+                                    isCriticallyLate ? "text-destructive" : "text-foreground"
+                                  }`}>
+                                    {b.customerName}
+                                  </span>
+                                  {isCriticallyLate && (
+                                    <span className="text-[9px] uppercase font-bold text-destructive bg-destructive/20 border border-destructive/30 px-1.5 py-0.5 rounded shrink-0">
+                                      Critical
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <span className="font-mono font-medium text-foreground/80">{b.vehicle.reg}</span>
+                                  <span>•</span>
+                                  <span>{b.terminal || "No terminal"}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3 shrink-0 pl-4">
+                              <StatusBadge status={b.status} />
+                              <div className="text-right">
+                                <div className={`text-xs font-mono font-medium ${
+                                  isCriticallyLate ? "text-destructive" : "text-muted-foreground"
+                                }`}>
+                                  Due {format(new Date(b.returnDate), "HH:mm")}
+                                </div>
+                                {minutesOverdue > 0 && (
+                                  <div className={`text-[10px] font-medium ${
+                                    isCriticallyLate ? "text-destructive" : "text-amber-600"
+                                  }`}>
+                                    +{minutesOverdue} min
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {overdueReturns.length > 8 && (
+                      <p className="text-xs text-muted-foreground text-center mt-3">
+                        +{overdueReturns.length - 8} more overdue returns. Check the Returns page for full list.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Summary */}
               <Separator className="bg-border/40" />
