@@ -2,7 +2,7 @@
 
 import { useBookings } from "@/lib/store";
 import { useSettings } from "@/lib/settings-store";
-import { BookingStatus } from "@/lib/types";
+import { Booking, BookingStatus } from "@/lib/types";
 import { CSVImportDialog } from "@/components/CSVImportDialog";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,9 +15,11 @@ import {
   AlertTriangle,
   Clock,
   CheckCircle2,
+  Copy,
 } from "lucide-react";
 import { format, isToday, isPast, addHours, isWithinInterval, addMinutes } from "date-fns";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export default function DashboardPage() {
   const {
@@ -29,6 +31,26 @@ export default function DashboardPage() {
     checkIn,
   } = useBookings();
   const { settings } = useSettings();
+
+  const copyBookingDetails = (booking: Booking) => {
+    const entryDate = new Date(booking.entryDate);
+    const returnDate = new Date(booking.returnDate);
+
+    const entryDateStr = format(entryDate, "dd-MMM-yyyy HH:mm:ss");
+    const returnDateStr = format(returnDate, "dd-MMM-yyyy HH:mm:ss");
+
+    const details = `${booking.bookingRef} ${booking.customerName} ${booking.customerPhone} ${entryDateStr} ${returnDateStr} ${booking.vehicle.make} ${booking.vehicle.model} ${booking.vehicle.colour} ${booking.vehicle.reg} PR ${booking.passengers}`;
+
+    navigator.clipboard.writeText(details);
+    toast.success("Booking details copied", {
+      description: `Copied: ${booking.bookingRef} - ${booking.customerName}`,
+    });
+  };
+
+  const handleCheckIn = (id: string, booking: Booking) => {
+    copyBookingDetails(booking);
+    checkIn(id);
+  };
 
   if (!loaded) {
     return (
@@ -212,7 +234,19 @@ export default function DashboardPage() {
                                   <span className="font-mono font-medium text-foreground/80">{b.vehicle.reg}</span>
                                 </p>
                               </div>
-                              <div className="flex items-center gap-3 shrink-0">
+                              <div className="flex items-center gap-2 shrink-0">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 rounded-lg border-border/50 hover:bg-accent/50"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    copyBookingDetails(b);
+                                  }}
+                                  title="Copy details"
+                                >
+                                  <Copy className="h-4 w-4" />
+                                </Button>
                                 <div className="flex flex-col items-end">
                                   <span className={cn("text-xs font-mono font-medium", isLate ? "text-destructive" : "text-muted-foreground")}>
                                     {format(new Date(b.entryDate), "HH:mm")}
@@ -221,7 +255,7 @@ export default function DashboardPage() {
                                 <Button
                                   size="sm"
                                   className="h-8 text-xs font-semibold px-4 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm shadow-primary/20"
-                                  onClick={() => checkIn(b.id)}
+                                  onClick={() => handleCheckIn(b.id, b)}
                                 >
                                   Check In
                                 </Button>
