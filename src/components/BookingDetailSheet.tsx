@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import {
   Car,
   User,
@@ -25,6 +26,7 @@ import {
   CreditCard,
   Users,
   MessageCircle,
+  Copy,
 } from "lucide-react";
 
 interface BookingDetailSheetProps {
@@ -38,8 +40,31 @@ export function BookingDetailSheet({
   open,
   onOpenChange,
 }: BookingDetailSheetProps) {
-  const { checkIn, markNoShow, requestReturn, dispatchShuttle, completeBooking } =
+  const { checkIn, markNoShow, requestReturn, dispatchShuttle, completeBooking, getBookingById } =
     useBookings();
+
+  const copyBookingDetails = (booking: Booking) => {
+    const entryDate = new Date(booking.entryDate);
+    const returnDate = new Date(booking.returnDate);
+
+    const entryDateStr = format(entryDate, "dd-MMM-yyyy HH:mm:ss");
+    const returnDateStr = format(returnDate, "dd-MMM-yyyy HH:mm:ss");
+
+    const details = `${booking.bookingRef} ${booking.customerName} ${booking.customerPhone} ${entryDateStr} ${returnDateStr} ${booking.vehicle.make} ${booking.vehicle.model} ${booking.vehicle.colour} ${booking.vehicle.reg} PR ${booking.passengers}`;
+
+    navigator.clipboard.writeText(details);
+    toast.success("Booking details copied", {
+      description: `Copied: ${booking.bookingRef} - ${booking.customerName}`,
+    });
+  };
+
+  const handleCheckIn = (id: string) => {
+    const b = getBookingById(id);
+    if (b) {
+      copyBookingDetails(b);
+      checkIn(id);
+    }
+  };
 
   if (!booking) return null;
 
@@ -190,11 +215,19 @@ export function BookingDetailSheet({
               Actions
             </h4>
             <div className="flex flex-col gap-2">
+              <Button
+                variant="outline"
+                onClick={() => copyBookingDetails(booking)}
+                className="w-full"
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                Copy Details
+              </Button>
               {booking.status === BookingStatus.BOOKED && (
                 <>
                   <Button
                     onClick={() => {
-                      checkIn(booking.id);
+                      handleCheckIn(booking.id);
                       onOpenChange(false);
                     }}
                     className="w-full"

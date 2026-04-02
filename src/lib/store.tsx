@@ -29,6 +29,7 @@ interface BookingContextType {
   getTodaysReturns: () => Booking[];
   getCarsOnLot: () => Booking[];
   getTodaysRevenue: () => number;
+  getBookingById: (id: string) => Booking | undefined;
 }
 
 const BookingContext = createContext<BookingContextType | undefined>(undefined);
@@ -235,6 +236,11 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       .reduce((sum, b) => sum + b.price, 0);
   }, [state.bookings, isToday]);
 
+  const getBookingById = useCallback(
+    (id: string) => state.bookings.find((b) => b.id === id),
+    [state.bookings]
+  );
+
   return (
     <BookingContext.Provider
       value={{
@@ -254,6 +260,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
         getTodaysReturns,
         getCarsOnLot,
         getTodaysRevenue,
+        getBookingById,
       }}
     >
       {children}

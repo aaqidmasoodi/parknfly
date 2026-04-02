@@ -29,6 +29,7 @@ export default function DashboardPage() {
     getTodaysReturns,
     getCarsOnLot,
     checkIn,
+    getBookingById,
   } = useBookings();
   const { settings } = useSettings();
 
@@ -47,9 +48,12 @@ export default function DashboardPage() {
     });
   };
 
-  const handleCheckIn = (id: string, booking: Booking) => {
-    copyBookingDetails(booking);
-    checkIn(id);
+  const handleCheckIn = (id: string) => {
+    const booking = getBookingById(id);
+    if (booking) {
+      copyBookingDetails(booking);
+      checkIn(id);
+    }
   };
 
   if (!loaded) {
@@ -255,7 +259,7 @@ export default function DashboardPage() {
                                 <Button
                                   size="sm"
                                   className="h-8 text-xs font-semibold px-4 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm shadow-primary/20"
-                                  onClick={() => handleCheckIn(b.id, b)}
+                                  onClick={() => handleCheckIn(b.id)}
                                 >
                                   Check In
                                 </Button>
