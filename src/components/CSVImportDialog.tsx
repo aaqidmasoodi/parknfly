@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useBookings } from "@/lib/store";
 import { parseCSV } from "@/lib/csv-parser";
-import { Booking } from "@/lib/types";
+import { Booking, BookingStatus } from "@/lib/types";
 import {
   Upload,
   FileSpreadsheet,
@@ -39,6 +39,7 @@ export function CSVImportDialog() {
   const [importing, setImporting] = useState(false);
   const [done, setDone] = useState(false);
   const [mergeMode, setMergeMode] = useState(false);
+  const [checkInAll, setCheckInAll] = useState(false);
   const [importedCount, setImportedCount] = useState(0);
 
   const handleFiles = useCallback((files: FileList | File[]) => {
@@ -120,6 +121,20 @@ export function CSVImportDialog() {
     }
     const combined = Array.from(deduped.values());
 
+    if (checkInAll) {
+      const now = new Date().toISOString();
+      for (const b of combined) {
+        if (b.status !== BookingStatus.CHECKED_IN) {
+          b.statusHistory.push({
+            from: b.status,
+            to: BookingStatus.CHECKED_IN,
+            timestamp: now,
+          });
+          b.status = BookingStatus.CHECKED_IN;
+        }
+      }
+    }
+
     if (mergeMode) {
       mergeImportBookings(combined);
     } else {
@@ -130,7 +145,7 @@ export function CSVImportDialog() {
     setImportedCount(combined.length);
     setDone(true);
     setImporting(false);
-  }, [validFiles, mergeMode, mergeImportBookings, clearAll, importBookings]);
+  }, [validFiles, mergeMode, checkInAll, mergeImportBookings, clearAll, importBookings]);
 
   const reset = () => {
     setParsedFiles([]);
@@ -138,6 +153,7 @@ export function CSVImportDialog() {
     setDone(false);
     setImporting(false);
     setMergeMode(false);
+    setCheckInAll(false);
     setImportedCount(0);
   };
 
@@ -301,7 +317,7 @@ export function CSVImportDialog() {
 
                     {/* Merge Mode Toggle */}
                     {bookings.length > 0 && (
-                      <div className="flex items-center justify-between pt-1 border-t border-border/50">
+                      <div className="flex items-center justify-between pt-2 border-t border-border/50 mt-2">
                         <div>
                           <Label htmlFor="merge-mode" className="text-xs font-medium cursor-pointer">
                             Merge with existing data
@@ -319,6 +335,23 @@ export function CSVImportDialog() {
                         />
                       </div>
                     )}
+
+                    {/* Check In All Toggle */}
+                    <div className="flex items-center justify-between pt-2 border-t border-border/50 mt-2">
+                      <div>
+                        <Label htmlFor="check-in-all" className="text-xs font-medium cursor-pointer">
+                          Mark all as Checked-In
+                        </Label>
+                        <p className="text-[11px] text-muted-foreground">
+                          Useful for importing returns already on the lot
+                        </p>
+                      </div>
+                      <Switch
+                        id="check-in-all"
+                        checked={checkInAll}
+                        onCheckedChange={setCheckInAll}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
