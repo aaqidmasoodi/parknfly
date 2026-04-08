@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useWhatsApp } from "@/lib/whatsapp-context";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SyncIndicator } from "@/components/SyncIndicator";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -67,16 +68,12 @@ export function Sidebar() {
 
         {/* Bottom: Settings + WA status */}
         <div className="p-3 border-t border-border/40 space-y-1">
+          <div className="flex items-center justify-center px-2 py-1.5">
+            <SyncIndicator compact />
+          </div>
           <div className="flex items-center justify-center px-2 py-2">
             <ThemeToggle />
           </div>
-          <Link
-            href="/settings#messages-section"
-            className="flex items-center justify-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all duration-200 group relative"
-            title="Messages"
-          >
-            <MessageCircle className="h-4 w-4 opacity-70 group-hover:opacity-100 shrink-0" />
-          </Link>
           <Link
             href="/settings"
             className={cn(
@@ -142,16 +139,12 @@ export function Sidebar() {
         {/* Bottom: Settings + WA status */}
         <div className="p-3 border-t border-border/40 space-y-1">
           <div className="flex items-center justify-between px-3 py-2">
+            <SyncIndicator />
+          </div>
+          <div className="flex items-center justify-between px-3 py-2">
             <span className="text-[11px] font-medium text-muted-foreground">Theme</span>
             <ThemeToggle />
           </div>
-          <Link
-            href="/settings#messages-section"
-            className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all duration-200 group relative"
-          >
-            <MessageCircle className="h-4 w-4 opacity-70 group-hover:opacity-100" />
-            Messages
-          </Link>
           <Link
             href="/settings"
             className={cn(

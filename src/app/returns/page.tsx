@@ -35,13 +35,14 @@ export default function ReturnsPage() {
     let result = bookings.filter((b) => {
       const returnDate = new Date(b.returnDate);
       const isDue = isToday(returnDate) || returnDate < overdueThreshold;
+      const isRequestedOrDispatched = b.status === BookingStatus.RETURN_REQUESTED || b.status === BookingStatus.SHUTTLE_DISPATCHED;
       const isActiveState =
         b.status === BookingStatus.CHECKED_IN ||
         b.status === BookingStatus.PARKED ||
         b.status === BookingStatus.RETURN_REQUESTED ||
         b.status === BookingStatus.SHUTTLE_DISPATCHED;
 
-      return isDue && isActiveState;
+      return (isDue && isActiveState) || isRequestedOrDispatched;
     });
 
     if (search) {
@@ -55,18 +56,28 @@ export default function ReturnsPage() {
       );
     }
 
-    // Sort: Requested first, then Overdue, then by time
+    // Sort: Requested first, then Dispatched, then Overdue/Expected by time
     return result.sort((a, b) => {
-      if (
-        a.status === BookingStatus.RETURN_REQUESTED &&
-        b.status !== BookingStatus.RETURN_REQUESTED
-      )
-        return -1;
-      if (
-        b.status === BookingStatus.RETURN_REQUESTED &&
-        a.status !== BookingStatus.RETURN_REQUESTED
-      )
-        return 1;
+      // Prioritize RETURN_REQUESTED
+      if (a.status === BookingStatus.RETURN_REQUESTED && b.status !== BookingStatus.RETURN_REQUESTED) return -1;
+      if (b.status === BookingStatus.RETURN_REQUESTED && a.status !== BookingStatus.RETURN_REQUESTED) return 1;
+      
+      if (a.status === BookingStatus.RETURN_REQUESTED && b.status === BookingStatus.RETURN_REQUESTED) {
+        // Both requested, sort by who requested FIRST (FIFO)
+        const aTime = a.statusHistory?.slice().reverse().find(h => h.to === BookingStatus.RETURN_REQUESTED)?.timestamp || a.returnDate;
+        const bTime = b.statusHistory?.slice().reverse().find(h => h.to === BookingStatus.RETURN_REQUESTED)?.timestamp || b.returnDate;
+        return new Date(aTime).getTime() - new Date(bTime).getTime();
+      }
+
+      // Prioritize SHUTTLE_DISPATCHED below RETURN_REQUESTED
+      if (a.status === BookingStatus.SHUTTLE_DISPATCHED && b.status !== BookingStatus.SHUTTLE_DISPATCHED) return -1;
+      if (b.status === BookingStatus.SHUTTLE_DISPATCHED && a.status !== BookingStatus.SHUTTLE_DISPATCHED) return 1;
+
+      if (a.status === BookingStatus.SHUTTLE_DISPATCHED && b.status === BookingStatus.SHUTTLE_DISPATCHED) {
+        const aTime = a.statusHistory?.slice().reverse().find(h => h.to === BookingStatus.SHUTTLE_DISPATCHED)?.timestamp || a.returnDate;
+        const bTime = b.statusHistory?.slice().reverse().find(h => h.to === BookingStatus.SHUTTLE_DISPATCHED)?.timestamp || b.returnDate;
+        return new Date(aTime).getTime() - new Date(bTime).getTime();
+      }
 
       return new Date(a.returnDate).getTime() - new Date(b.returnDate).getTime();
     });

@@ -46,6 +46,7 @@ export interface StatusChange {
 export type BookingAction =
   | { type: "IMPORT"; bookings: Booking[] }
   | { type: "MERGE_IMPORT"; bookings: Booking[] }
+  | { type: "SET_ALL"; bookings: Booking[] }
   | { type: "CHECK_IN"; id: string; parkingSpot?: string }
   | { type: "MARK_NO_SHOW"; id: string }
   | { type: "MARK_PARKED"; id: string; parkingSpot: string }

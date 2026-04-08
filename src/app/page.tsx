@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useBookings } from "@/lib/store";
 import { useSettings } from "@/lib/settings-store";
 import { Booking, BookingStatus } from "@/lib/types";
@@ -65,8 +66,44 @@ export default function DashboardPage() {
   }
 
   const todaysArrivals = getTodaysArrivals();
-  const todaysReturns = getTodaysReturns();
   const carsOnLot = getCarsOnLot();
+
+  const dashboardActiveReturns = useMemo(() => {
+    const overdueThreshold = addMinutes(new Date(), -settings.overdueReturnHours * 60);
+    return bookings.filter((b) => {
+      const returnDate = new Date(b.returnDate);
+      const isDue = isToday(returnDate) || returnDate < overdueThreshold;
+      const isRequestedOrDispatched = b.status === BookingStatus.RETURN_REQUESTED || b.status === BookingStatus.SHUTTLE_DISPATCHED;
+      const isActiveState =
+        b.status !== BookingStatus.COMPLETED &&
+        b.status !== BookingStatus.NO_SHOW &&
+        b.status !== BookingStatus.BOOKED;
+
+      return (isDue && isActiveState) || isRequestedOrDispatched;
+    }).sort((a, b) => {
+      // Prioritize RETURN_REQUESTED
+      if (a.status === BookingStatus.RETURN_REQUESTED && b.status !== BookingStatus.RETURN_REQUESTED) return -1;
+      if (b.status === BookingStatus.RETURN_REQUESTED && a.status !== BookingStatus.RETURN_REQUESTED) return 1;
+      
+      if (a.status === BookingStatus.RETURN_REQUESTED && b.status === BookingStatus.RETURN_REQUESTED) {
+        const aTime = a.statusHistory?.slice().reverse().find(h => h.to === BookingStatus.RETURN_REQUESTED)?.timestamp || a.returnDate;
+        const bTime = b.statusHistory?.slice().reverse().find(h => h.to === BookingStatus.RETURN_REQUESTED)?.timestamp || b.returnDate;
+        return new Date(aTime).getTime() - new Date(bTime).getTime();
+      }
+
+      // Prioritize SHUTTLE_DISPATCHED
+      if (a.status === BookingStatus.SHUTTLE_DISPATCHED && b.status !== BookingStatus.SHUTTLE_DISPATCHED) return -1;
+      if (b.status === BookingStatus.SHUTTLE_DISPATCHED && a.status !== BookingStatus.SHUTTLE_DISPATCHED) return 1;
+
+      if (a.status === BookingStatus.SHUTTLE_DISPATCHED && b.status === BookingStatus.SHUTTLE_DISPATCHED) {
+        const aTime = a.statusHistory?.slice().reverse().find(h => h.to === BookingStatus.SHUTTLE_DISPATCHED)?.timestamp || a.returnDate;
+        const bTime = b.statusHistory?.slice().reverse().find(h => h.to === BookingStatus.SHUTTLE_DISPATCHED)?.timestamp || b.returnDate;
+        return new Date(aTime).getTime() - new Date(bTime).getTime();
+      }
+
+      return new Date(a.returnDate).getTime() - new Date(b.returnDate).getTime();
+    });
+  }, [bookings, settings.overdueReturnHours]);
 
   const expectedCount = todaysArrivals.filter(
     (b) => b.status === BookingStatus.BOOKED
@@ -74,12 +111,7 @@ export default function DashboardPage() {
   const checkedInCount = todaysArrivals.filter(
     (b) => b.status !== BookingStatus.BOOKED && b.status !== BookingStatus.NO_SHOW
   ).length;
-  const returnsDueCount = todaysReturns.filter(
-    (b) =>
-      b.status !== BookingStatus.COMPLETED &&
-      b.status !== BookingStatus.NO_SHOW &&
-      b.status !== BookingStatus.BOOKED
-  ).length;
+  const returnsDueCount = dashboardActiveReturns.length;
 
   // A return is overdue if it's past the return time by more than the configured hours
   const overdueThreshold = addMinutes(new Date(), -settings.overdueReturnHours * 60);
@@ -285,12 +317,7 @@ export default function DashboardPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0 overflow-y-auto flex-1">
-                    {todaysReturns.filter(
-                      (b) =>
-                        b.status !== BookingStatus.COMPLETED &&
-                        b.status !== BookingStatus.BOOKED &&
-                        b.status !== BookingStatus.NO_SHOW
-                    ).length === 0 ? (
+                    {dashboardActiveReturns.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-70 p-6 text-center">
                         <div className="w-8 h-8 rounded-full border-2 border-dashed border-current flex items-center justify-center mb-2">
                           <span className="text-xs">0</span>
@@ -299,19 +326,7 @@ export default function DashboardPage() {
                       </div>
                     ) : (
                       <div className="divide-y divide-border/40">
-                        {todaysReturns
-                          .filter(
-                            (b) =>
-                              b.status !== BookingStatus.COMPLETED &&
-                              b.status !== BookingStatus.BOOKED &&
-                              b.status !== BookingStatus.NO_SHOW
-                          )
-                          .sort(
-                            (a, b) =>
-                              new Date(a.returnDate).getTime() -
-                              new Date(b.returnDate).getTime()
-                          )
-                          .map((b) => (
+                        {dashboardActiveReturns.map((b) => (
                             <div
                               key={b.id}
                               className="flex items-center justify-between p-4 group hover:bg-muted/20 transition-colors"
