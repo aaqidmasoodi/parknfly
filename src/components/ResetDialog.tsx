@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from "@/lib/auth-context";
 import {
   Dialog,
   DialogContent,
@@ -18,11 +19,15 @@ import { useMessages } from "@/lib/message-store";
 import { Trash2, AlertTriangle } from "lucide-react";
 
 export function ResetDialog() {
+  const { hasPermission } = useAuth();
   const { clearAll } = useBookings();
   const { clearAll: clearMessages } = useMessages();
   const [open, setOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [done, setDone] = useState(false);
+
+  // Permission gate
+  if (!hasPermission("reset_data")) return null;
 
   const canDelete = confirmText === "DELETE";
 

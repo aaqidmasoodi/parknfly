@@ -57,17 +57,6 @@ export default function DashboardPage() {
     }
   };
 
-  if (!loaded) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  const todaysArrivals = getTodaysArrivals();
-  const carsOnLot = getCarsOnLot();
-
   const dashboardActiveReturns = useMemo(() => {
     const overdueThreshold = addMinutes(new Date(), -settings.overdueReturnHours * 60);
     return bookings.filter((b) => {
@@ -105,6 +94,17 @@ export default function DashboardPage() {
     });
   }, [bookings, settings.overdueReturnHours]);
 
+  if (!loaded) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  const todaysArrivals = getTodaysArrivals();
+  const carsOnLot = getCarsOnLot();
+
   const expectedCount = todaysArrivals.filter(
     (b) => b.status === BookingStatus.BOOKED
   ).length;
@@ -113,15 +113,7 @@ export default function DashboardPage() {
   ).length;
   const returnsDueCount = dashboardActiveReturns.length;
 
-  // A return is overdue if it's past the return time by more than the configured hours
-  const overdueThreshold = addMinutes(new Date(), -settings.overdueReturnHours * 60);
-  const overdueReturns = bookings.filter(
-    (b) =>
-      new Date(b.returnDate) < overdueThreshold &&
-      b.status !== BookingStatus.COMPLETED &&
-      b.status !== BookingStatus.NO_SHOW &&
-      b.status !== BookingStatus.BOOKED
-  );
+
 
   // Show only bookings within the 1-hour window (from 1 hour ago up to 1 hour ahead)
   const now = new Date();
@@ -215,12 +207,7 @@ export default function DashboardPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold tracking-tight">{returnsDueCount}</div>
-                    {overdueReturns.length > 0 && (
-                      <p className="text-xs text-destructive mt-1 flex items-center gap-1 font-medium animate-pulse">
-                        <AlertTriangle className="h-3 w-3" />
-                        {overdueReturns.length} overdue
-                      </p>
-                    )}
+
                   </CardContent>
                 </Card>
               </div>
@@ -356,92 +343,7 @@ export default function DashboardPage() {
                 </Card>
               </div>
 
-              {/* Alerts - Overdue Returns */}
-              {overdueReturns.length > 0 && (
-                <Card className="border-destructive/30 bg-destructive/5 shadow-lg overflow-hidden animate-slide-in">
-                  <div className="h-1 w-full bg-gradient-to-r from-destructive/50 via-destructive to-destructive/50"></div>
-                  <CardHeader className="pb-3 px-6 pt-4">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-semibold flex items-center gap-2 text-destructive">
-                        <div className="p-1.5 rounded-md bg-destructive/10">
-                          <AlertTriangle className="h-4 w-4" />
-                        </div>
-                        Overdue Returns
-                        <span className="ml-2 text-xs font-bold text-destructive bg-destructive/15 border border-destructive/20 px-2 py-0.5 rounded-full">
-                          {overdueReturns.length}
-                        </span>
-                      </CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="px-6 pb-4">
-                    <div className="grid gap-2">
-                      {overdueReturns.slice(0, 8).map((b) => {
-                        const minutesOverdue = Math.floor(
-                          (new Date().getTime() - new Date(b.returnDate).getTime()) / 60000
-                        );
-                        const isCriticallyLate = minutesOverdue > 60;
-                        return (
-                          <div
-                            key={b.id}
-                            className={`flex items-center justify-between p-3 rounded-lg border ${
-                              isCriticallyLate
-                                ? "bg-destructive/15 border-destructive/30"
-                                : "bg-destructive/10 border-destructive/20"
-                            }`}
-                          >
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <div className={`w-2 h-2 rounded-full shrink-0 ${
-                                isCriticallyLate ? "bg-destructive animate-pulse" : "bg-amber-500"
-                              }`} />
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span className={`font-semibold text-sm truncate ${
-                                    isCriticallyLate ? "text-destructive" : "text-foreground"
-                                  }`}>
-                                    {b.customerName}
-                                  </span>
-                                  {isCriticallyLate && (
-                                    <span className="text-[9px] uppercase font-bold text-destructive bg-destructive/20 border border-destructive/30 px-1.5 py-0.5 rounded shrink-0">
-                                      Critical
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                  <span className="font-mono font-medium text-foreground/80">{b.vehicle.reg}</span>
-                                  <span>•</span>
-                                  <span>{b.terminal || "No terminal"}</span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3 shrink-0 pl-4">
-                              <StatusBadge status={b.status} />
-                              <div className="text-right">
-                                <div className={`text-xs font-mono font-medium ${
-                                  isCriticallyLate ? "text-destructive" : "text-muted-foreground"
-                                }`}>
-                                  Due {format(new Date(b.returnDate), "HH:mm")}
-                                </div>
-                                {minutesOverdue > 0 && (
-                                  <div className={`text-[10px] font-medium ${
-                                    isCriticallyLate ? "text-destructive" : "text-amber-600"
-                                  }`}>
-                                    +{minutesOverdue} min
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {overdueReturns.length > 8 && (
-                      <p className="text-xs text-muted-foreground text-center mt-3">
-                        +{overdueReturns.length - 8} more overdue returns. Check the Returns page for full list.
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
+
 
               {/* Summary */}
               <Separator className="bg-border/40" />

@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useBookings } from "@/lib/store";
+import { useAuth } from "@/lib/auth-context";
 import { Booking, BookingStatus } from "@/lib/types";
 import { CSVImportDialog } from "@/components/CSVImportDialog";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -49,6 +50,7 @@ type BookingTypeFilter = "all" | "departures" | "returns";
 
 export default function BookingsPage() {
   const { bookings, loaded, checkIn, markNoShow, requestReturn, getBookingById } = useBookings();
+  const { hasPermission } = useAuth();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [bookingTypeFilter, setBookingTypeFilter] = useState<BookingTypeFilter>("all");
@@ -321,7 +323,7 @@ export default function BookingsPage() {
                             Copy Details
                           </DropdownMenuItem>
 
-                          {booking.status === BookingStatus.BOOKED && (
+                          {booking.status === BookingStatus.BOOKED && hasPermission("check_in") && (
                             <>
                               <div className="h-px bg-border/40 my-1 mx-2" />
                               <DropdownMenuItem
@@ -346,7 +348,7 @@ export default function BookingsPage() {
                               </DropdownMenuItem>
                             </>
                           )}
-                          {booking.status === BookingStatus.CHECKED_IN && (
+                          {booking.status === BookingStatus.CHECKED_IN && hasPermission("mark_arrived") && (
                             <>
                               <div className="h-px bg-border/40 my-1 mx-2" />
                               <DropdownMenuItem

@@ -1,15 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useAuth } from "@/lib/auth-context";
 import { useBookings } from "@/lib/store";
 import { useSettings } from "@/lib/settings-store";
 import { Booking, BookingStatus } from "@/lib/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { BookingDetailSheet } from "@/components/BookingDetailSheet";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { isToday, isPast, format, addMinutes } from "date-fns";
+import { isToday, isPast, format, differenceInCalendarDays, startOfDay } from "date-fns";
 import {
   Search,
   RotateCcw,
@@ -18,31 +19,39 @@ import {
   Send,
   CheckCircle2,
   Clock,
+  EuroIcon,
 } from "lucide-react";
 
+// Calculate overdue days and charge when customer arrives
+function getOverdueInfo(booking: Booking): { days: number; charge: number; arrivedAt: Date } | null {
+  // Find when RETURN_REQUESTED was set (= when customer marked as arrived)
+  const arrivedEntry = booking.statusHistory?.slice().reverse().find(
+    (h) => h.to === BookingStatus.RETURN_REQUESTED
+  );
+  const arrivedAt = arrivedEntry ? new Date(arrivedEntry.timestamp) : new Date();
+  const returnDate = new Date(booking.returnDate);
+
+  const overdueDays = differenceInCalendarDays(startOfDay(arrivedAt), startOfDay(returnDate));
+  if (overdueDays <= 0) return null;
+
+  return { days: overdueDays, charge: overdueDays * 20, arrivedAt };
+}
+
 export default function ReturnsPage() {
+  const { hasPermission } = useAuth();
   const { bookings, loaded, dispatchShuttle, completeBooking } = useBookings();
   const { settings } = useSettings();
   const [search, setSearch] = useState("");
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  // Active returns: Due today OR overdue, and NOT checked out, NOT cancelled, NOT just booked
+  // Active returns: Only customers who requested a return or whose shuttle is dispatched
   const activeReturns = useMemo(() => {
-    // A return is overdue if it's past the return time by more than the configured hours
-    const overdueThreshold = addMinutes(new Date(), -settings.overdueReturnHours * 60);
-    
     let result = bookings.filter((b) => {
-      const returnDate = new Date(b.returnDate);
-      const isDue = isToday(returnDate) || returnDate < overdueThreshold;
-      const isRequestedOrDispatched = b.status === BookingStatus.RETURN_REQUESTED || b.status === BookingStatus.SHUTTLE_DISPATCHED;
-      const isActiveState =
-        b.status === BookingStatus.CHECKED_IN ||
-        b.status === BookingStatus.PARKED ||
+      return (
         b.status === BookingStatus.RETURN_REQUESTED ||
-        b.status === BookingStatus.SHUTTLE_DISPATCHED;
-
-      return (isDue && isActiveState) || isRequestedOrDispatched;
+        b.status === BookingStatus.SHUTTLE_DISPATCHED
+      );
     });
 
     if (search) {
@@ -56,29 +65,17 @@ export default function ReturnsPage() {
       );
     }
 
-    // Sort: Requested first, then Dispatched, then Overdue/Expected by time
+    // Sort: RETURN_REQUESTED first (FIFO), then SHUTTLE_DISPATCHED, then by return date
     return result.sort((a, b) => {
-      // Prioritize RETURN_REQUESTED
       if (a.status === BookingStatus.RETURN_REQUESTED && b.status !== BookingStatus.RETURN_REQUESTED) return -1;
       if (b.status === BookingStatus.RETURN_REQUESTED && a.status !== BookingStatus.RETURN_REQUESTED) return 1;
-      
       if (a.status === BookingStatus.RETURN_REQUESTED && b.status === BookingStatus.RETURN_REQUESTED) {
-        // Both requested, sort by who requested FIRST (FIFO)
         const aTime = a.statusHistory?.slice().reverse().find(h => h.to === BookingStatus.RETURN_REQUESTED)?.timestamp || a.returnDate;
         const bTime = b.statusHistory?.slice().reverse().find(h => h.to === BookingStatus.RETURN_REQUESTED)?.timestamp || b.returnDate;
         return new Date(aTime).getTime() - new Date(bTime).getTime();
       }
-
-      // Prioritize SHUTTLE_DISPATCHED below RETURN_REQUESTED
       if (a.status === BookingStatus.SHUTTLE_DISPATCHED && b.status !== BookingStatus.SHUTTLE_DISPATCHED) return -1;
       if (b.status === BookingStatus.SHUTTLE_DISPATCHED && a.status !== BookingStatus.SHUTTLE_DISPATCHED) return 1;
-
-      if (a.status === BookingStatus.SHUTTLE_DISPATCHED && b.status === BookingStatus.SHUTTLE_DISPATCHED) {
-        const aTime = a.statusHistory?.slice().reverse().find(h => h.to === BookingStatus.SHUTTLE_DISPATCHED)?.timestamp || a.returnDate;
-        const bTime = b.statusHistory?.slice().reverse().find(h => h.to === BookingStatus.SHUTTLE_DISPATCHED)?.timestamp || b.returnDate;
-        return new Date(aTime).getTime() - new Date(bTime).getTime();
-      }
-
       return new Date(a.returnDate).getTime() - new Date(b.returnDate).getTime();
     });
   }, [bookings, search]);
@@ -86,7 +83,7 @@ export default function ReturnsPage() {
   if (!loaded) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
   }
@@ -97,10 +94,10 @@ export default function ReturnsPage() {
 
   return (
     <div className="flex flex-col h-full bg-background relative overflow-hidden">
-      <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none z-0"></div>
+      <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none z-0" />
 
       {/* Header */}
-      <header className="flex items-center justify-between px-6 h-14 border-b border-border/40 shrink-0 glass-card z-10 sticky top-0">
+      <header className="flex items-center justify-between px-4 sm:px-6 h-14 border-b border-border/40 shrink-0 glass-card z-10 sticky top-0">
         <h1 className="text-lg font-semibold tracking-tight flex items-center gap-2">
           <RotateCcw className="h-5 w-5 text-amber-500" />
           Live Returns
@@ -108,8 +105,8 @@ export default function ReturnsPage() {
         {requestedCount > 0 && (
           <div className="flex items-center gap-2 px-3 py-1 bg-amber-500/10 text-amber-500 rounded-full border border-amber-500/20 shadow-sm animate-pulse">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
             </span>
             <span className="text-xs font-bold tracking-wide uppercase">
               {requestedCount} awaiting pickup
@@ -120,7 +117,7 @@ export default function ReturnsPage() {
 
       {/* Main Board */}
       <div className="flex-1 overflow-y-auto z-10">
-        <div className="p-6 max-w-5xl mx-auto space-y-6 pb-20 md:pb-6 animate-fade-in-up">
+        <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-6 pb-24 md:pb-6 animate-fade-in-up">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-xl font-semibold tracking-tight">Return Dispatch</h2>
@@ -144,11 +141,9 @@ export default function ReturnsPage() {
               <Card className="border border-dashed border-border/50 bg-background/50 shadow-none">
                 <CardContent className="flex flex-col items-center justify-center h-64 text-center">
                   <RotateCcw className="h-12 w-12 text-muted-foreground opacity-20 mb-4" />
-                  <p className="text-lg font-medium text-foreground/80">
-                    No active returns right now
-                  </p>
+                  <p className="text-lg font-medium text-foreground/80">No active returns right now</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    All clear! Expected arrivals and overdue vehicles will appear here.
+                    All clear! Customers who mark their arrival will appear here.
                   </p>
                 </CardContent>
               </Card>
@@ -156,36 +151,56 @@ export default function ReturnsPage() {
               activeReturns.map((booking) => {
                 const isRequested = booking.status === BookingStatus.RETURN_REQUESTED;
                 const isDispatched = booking.status === BookingStatus.SHUTTLE_DISPATCHED;
-                const overdueThreshold = addMinutes(new Date(), -settings.overdueReturnHours * 60);
-                const isOverdue =
-                  new Date(booking.returnDate) < overdueThreshold && !isRequested && !isDispatched;
+                const isWaiting = !isRequested && !isDispatched;
+                const overdueInfo = (isRequested || isDispatched) ? getOverdueInfo(booking) : null;
+                const daysStayed = differenceInCalendarDays(
+                  startOfDay(new Date(booking.returnDate)),
+                  startOfDay(new Date(booking.entryDate))
+                ) + 1;
 
                 return (
                   <Card
                     key={booking.id}
-                    className={`group transition-all duration-300 overflow-hidden cursor-pointer hover:shadow-lg border-border/50
-                      ${isRequested ? "border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.1)] ring-1 ring-amber-500/20" : ""}
-                      ${isDispatched ? "border-orange-500/30 opacity-80 bg-orange-500/5" : "glass-card"}
-                      ${isOverdue ? "border-destructive/30" : ""}
+                    className={`group transition-all duration-300 overflow-hidden cursor-pointer hover:shadow-lg
+                      ${isRequested ? "border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.1)] ring-1 ring-amber-500/20 glass-card" : ""}
+                      ${isDispatched ? "border-orange-500/30 opacity-90 bg-orange-500/5 glass-card" : ""}
+                      ${isWaiting ? "border-border/50 glass-card" : ""}
                     `}
                     onClick={() => {
                       setSelectedBooking(booking);
                       setSheetOpen(true);
                     }}
                   >
-                    <div className="flex flex-col sm:flex-row border-l-4 border-transparent sm:h-24">
+                    {/* Overdue banner */}
+                    {overdueInfo && (
+                      <div className="flex items-center gap-2 px-4 py-2 bg-destructive/10 border-b border-destructive/20">
+                        <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />
+                        <span className="text-xs font-semibold text-destructive">
+                          {overdueInfo.days} day{overdueInfo.days !== 1 ? "s" : ""} overdue
+                        </span>
+                        <span className="mx-1 text-destructive/40">•</span>
+                        <EuroIcon className="h-3.5 w-3.5 text-destructive shrink-0" />
+                        <span className="text-xs font-bold text-destructive">
+                          €{overdueInfo.charge} to collect
+                        </span>
+                        <span className="ml-auto text-[10px] text-destructive/60">
+                          (€20/day × {overdueInfo.days})
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex flex-col sm:flex-row border-l-4 border-transparent sm:min-h-24">
                       {/* Left: Time & Status */}
-                      <div className="flex items-center sm:flex-col sm:justify-center sm:items-start p-4 sm:w-48 shrink-0 bg-muted/10 border-b sm:border-b-0 sm:border-r border-border/40 gap-3">
+                      <div className="flex items-center sm:flex-col sm:justify-center sm:items-start p-4 sm:w-44 shrink-0 bg-muted/10 border-b sm:border-b-0 sm:border-r border-border/40 gap-3">
                         <div className="flex flex-col gap-1">
                           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                            <Clock className="h-3 w-3" /> Due Return
+                            <Clock className="h-3 w-3" /> Return
                           </span>
-                          <span
-                            className={`text-xl font-bold font-mono tracking-tight ${
-                              isOverdue ? "text-destructive" : "text-foreground"
-                            }`}
-                          >
+                          <span className="text-xl font-bold font-mono tracking-tight text-foreground">
                             {format(new Date(booking.returnDate), "HH:mm")}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {format(new Date(booking.returnDate), "dd MMM")} · {daysStayed}d stay
                           </span>
                         </div>
                         <StatusBadge status={booking.status} />
@@ -197,9 +212,9 @@ export default function ReturnsPage() {
                           <h3 className="font-semibold text-base mb-1 truncate text-foreground/90">
                             {booking.customerName}
                           </h3>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium flex-wrap">
                             <span>{booking.vehicle.make} {booking.vehicle.model}</span>
-                            <span className="mx-1 opacity-50">•</span>
+                            <span className="opacity-50">•</span>
                             <span className="font-mono text-foreground/70 bg-muted/50 px-1.5 py-0.5 rounded border border-border/30">
                               {booking.vehicle.reg}
                             </span>
@@ -223,46 +238,41 @@ export default function ReturnsPage() {
                         </div>
                       </div>
 
-                      {/* Right: Primary Action */}
-                      <div className="flex sm:flex-col p-4 sm:w-40 shrink-0 gap-2 border-t sm:border-t-0 sm:border-l border-border/40 items-center justify-center bg-muted/5 sm:bg-transparent">
-                        {isRequested && (
+                      {/* Right: Action */}
+                      <div className="flex sm:flex-col p-4 sm:w-36 shrink-0 gap-2 border-t sm:border-t-0 sm:border-l border-border/40 items-center justify-center">
+                        {isRequested && hasPermission("dispatch_shuttle") && (
                           <Button
-                            className="w-full gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-md border-0 group-hover:scale-105 transition-transform"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              dispatchShuttle(booking.id);
-                            }}
+                            className="w-full gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-md border-0 text-sm"
+                            onClick={(e) => { e.stopPropagation(); dispatchShuttle(booking.id); }}
                           >
                             <Send className="h-4 w-4" />
                             Dispatch
                           </Button>
                         )}
-                        {isDispatched && (
+                        {isRequested && !hasPermission("dispatch_shuttle") && (
+                          <p className="text-xs font-medium text-amber-500 bg-amber-500/10 py-1.5 px-2 rounded-md text-center">
+                            Awaiting dispatch
+                          </p>
+                        )}
+                        {isDispatched && hasPermission("complete_booking") && (
                           <Button
                             variant="default"
-                            className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 shadow-md border-0 group-hover:scale-105 transition-transform"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              completeBooking(booking.id);
-                            }}
+                            className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 shadow-md border-0 text-sm"
+                            onClick={(e) => { e.stopPropagation(); completeBooking(booking.id); }}
                           >
                             <CheckCircle2 className="h-4 w-4" />
                             Complete
                           </Button>
                         )}
-                        {!isRequested && !isDispatched && (
-                          <div className="text-center w-full">
-                            {isOverdue ? (
-                              <p className="text-xs font-semibold text-destructive flex items-center justify-center gap-1 bg-destructive/10 py-1.5 rounded-md">
-                                <AlertTriangle className="h-3.5 w-3.5" />
-                                Overdue
-                              </p>
-                            ) : (
-                              <p className="text-xs font-medium text-muted-foreground">
-                                Waiting...
-                              </p>
-                            )}
-                          </div>
+                        {isDispatched && !hasPermission("complete_booking") && (
+                          <p className="text-xs font-medium text-orange-500 bg-orange-500/10 py-1.5 px-2 rounded-md text-center">
+                            Shuttle en route
+                          </p>
+                        )}
+                        {isWaiting && (
+                          <p className="text-xs font-medium text-muted-foreground text-center">
+                            Waiting for<br />customer call
+                          </p>
                         )}
                       </div>
                     </div>

@@ -2,6 +2,7 @@
 
 import { Booking, BookingStatus } from "@/lib/types";
 import { useBookings } from "@/lib/store";
+import { useAuth } from "@/lib/auth-context";
 import { StatusBadge } from "./StatusBadge";
 import { WhatsAppTemplateSelector } from "./WhatsAppButton";
 import {
@@ -13,7 +14,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { format } from "date-fns";
+import { format, differenceInCalendarDays } from "date-fns";
 import { toast } from "sonner";
 import {
   Car,
@@ -27,6 +28,7 @@ import {
   Users,
   MessageCircle,
   Copy,
+  Undo2,
 } from "lucide-react";
 
 interface BookingDetailSheetProps {
@@ -40,8 +42,13 @@ export function BookingDetailSheet({
   open,
   onOpenChange,
 }: BookingDetailSheetProps) {
-  const { checkIn, markNoShow, requestReturn, dispatchShuttle, completeBooking, getBookingById } =
+  const { checkIn, markNoShow, requestReturn, dispatchShuttle, completeBooking, getBookingById, dispatch } =
     useBookings();
+  const { hasPermission } = useAuth();
+
+  const revertToBooked = (id: string) => {
+    dispatch({ type: "UPDATE_STATUS", id, status: BookingStatus.BOOKED });
+  };
 
   const copyBookingDetails = (booking: Booking) => {
     const entryDate = new Date(booking.entryDate);
@@ -157,6 +164,12 @@ export function BookingDetailSheet({
                 </div>
               </div>
             </div>
+            <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/5 border border-primary/10 w-fit">
+              <Calendar className="h-4 w-4 text-primary shrink-0" />
+              <span className="text-sm font-semibold text-primary">
+                {differenceInCalendarDays(returnDate, entryDate) + 1} day{differenceInCalendarDays(returnDate, entryDate) + 1 !== 1 ? "s" : ""}
+              </span>
+            </div>
           </section>
 
           <Separator />
@@ -223,7 +236,7 @@ export function BookingDetailSheet({
                 <Copy className="h-4 w-4 mr-2" />
                 Copy Details
               </Button>
-              {booking.status === BookingStatus.BOOKED && (
+              {booking.status === BookingStatus.BOOKED && hasPermission("check_in") && (
                 <>
                   <Button
                     onClick={() => {
@@ -247,29 +260,76 @@ export function BookingDetailSheet({
                 </>
               )}
               {booking.status === BookingStatus.CHECKED_IN && (
+                <>
+                  {hasPermission("mark_arrived") && (
+                    <Button
+                      onClick={() => {
+                        requestReturn(booking.id);
+                        onOpenChange(false);
+                      }}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      Customer Arrived
+                    </Button>
+                  )}
+                  {hasPermission("check_in") && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        revertToBooked(booking.id);
+                        onOpenChange(false);
+                      }}
+                      className="w-full text-muted-foreground border-dashed gap-2"
+                    >
+                      <Undo2 className="h-3.5 w-3.5" />
+                      Undo Check-In
+                    </Button>
+                  )}
+                </>
+              )}
+              {booking.status === BookingStatus.NO_SHOW && hasPermission("check_in") && (
                 <Button
+                  variant="outline"
                   onClick={() => {
-                    requestReturn(booking.id);
+                    revertToBooked(booking.id);
                     onOpenChange(false);
                   }}
-                  variant="outline"
-                  className="w-full"
+                  className="w-full text-muted-foreground border-dashed gap-2"
                 >
-                  Request Return
+                  <Undo2 className="h-3.5 w-3.5" />
+                  Undo No-Show
                 </Button>
               )}
               {booking.status === BookingStatus.RETURN_REQUESTED && (
-                <Button
-                  onClick={() => {
-                    dispatchShuttle(booking.id);
-                    onOpenChange(false);
-                  }}
-                  className="w-full"
-                >
-                  Dispatch Shuttle
-                </Button>
+                <>
+                  {hasPermission("dispatch_shuttle") && (
+                    <Button
+                      onClick={() => {
+                        dispatchShuttle(booking.id);
+                        onOpenChange(false);
+                      }}
+                      className="w-full"
+                    >
+                      Dispatch Shuttle
+                    </Button>
+                  )}
+                  {hasPermission("mark_arrived") && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        dispatch({ type: "UPDATE_STATUS", id: booking.id, status: BookingStatus.CHECKED_IN });
+                        onOpenChange(false);
+                      }}
+                      className="w-full text-muted-foreground border-dashed gap-2"
+                    >
+                      <Undo2 className="h-3.5 w-3.5" />
+                      Undo Arrived
+                    </Button>
+                  )}
+                </>
               )}
-              {booking.status === BookingStatus.SHUTTLE_DISPATCHED && (
+              {booking.status === BookingStatus.SHUTTLE_DISPATCHED && hasPermission("complete_booking") && (
                 <Button
                   onClick={() => {
                     completeBooking(booking.id);

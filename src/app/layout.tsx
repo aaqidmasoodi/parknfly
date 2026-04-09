@@ -5,7 +5,8 @@ import { BookingProvider } from "@/lib/store";
 import { MessageStoreProvider } from "@/lib/message-store";
 import { SettingsProvider } from "@/lib/settings-store";
 import { WhatsAppProvider } from "@/lib/whatsapp-context";
-import { Sidebar, MobileNav } from "@/components/Sidebar";
+import { AuthProvider } from "@/lib/auth-context";
+import { Sidebar, MobileNav, MobileTopBar } from "@/components/Sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
@@ -43,20 +44,23 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <WhatsAppProvider>
-            <BookingProvider>
-              <MessageStoreProvider>
-                <SettingsProvider>
-                  <Sidebar />
-                  <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                    {children}
-                  </main>
-                  <MobileNav />
-                  <Toaster richColors position="bottom-right" />
-                </SettingsProvider>
-              </MessageStoreProvider>
-            </BookingProvider>
-          </WhatsAppProvider>
+          <AuthProvider>
+            <WhatsAppProvider>
+              <BookingProvider>
+                <MessageStoreProvider>
+                  <SettingsProvider>
+                    <Sidebar />
+                    <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                      <MobileTopBar />
+                      {children}
+                    </main>
+                    <MobileNav />
+                    <Toaster richColors position="bottom-right" />
+                  </SettingsProvider>
+                </MessageStoreProvider>
+              </BookingProvider>
+            </WhatsAppProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

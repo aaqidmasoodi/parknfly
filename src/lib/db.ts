@@ -63,7 +63,30 @@ export async function ensureTables() {
       sql: `CREATE INDEX IF NOT EXISTS idx_status_history_booking_id ON status_history(booking_id)`,
       args: [],
     },
+    {
+      sql: `CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        name TEXT NOT NULL DEFAULT '',
+        role TEXT NOT NULL DEFAULT 'returns_handler',
+        permissions TEXT NOT NULL DEFAULT '[]',
+        created_at TEXT DEFAULT (datetime('now')),
+        created_by TEXT DEFAULT ''
+      )`,
+      args: [],
+    },
   ]);
+
+  // Migration: add permissions column if it doesn't exist (for existing DBs)
+  try {
+    await db.execute({
+      sql: `ALTER TABLE users ADD COLUMN permissions TEXT NOT NULL DEFAULT '[]'`,
+      args: [],
+    });
+  } catch {
+    // Column already exists — ignore
+  }
 
   tablesEnsured = true;
 }
