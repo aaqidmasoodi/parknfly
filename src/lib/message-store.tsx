@@ -86,63 +86,84 @@ export function MessageStoreProvider({ children }: { children: React.ReactNode }
   const [templates, setTemplates] = useState<MessageTemplate[]>(DEFAULT_TEMPLATES);
   const [loaded, setLoaded] = useState(false);
 
-  // Load from localStorage
+  // Load from API
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as MessageTemplate[];
-        if (parsed.length > 0) {
-          setTemplates(parsed);
+    async function load() {
+      try {
+        const res = await fetch("/api/messages");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.length > 0) {
+            setTemplates(data);
+          }
         }
+      } catch (e) {
+        console.error("Failed to load message templates", e);
+      } finally {
+        setLoaded(true);
       }
-    } catch (e) {
-      console.warn("Failed to load message templates", e);
     }
-    setLoaded(true);
+    load();
   }, []);
 
-  // Save to localStorage
-  useEffect(() => {
-    if (loaded) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(templates));
-      } catch (e) {
-        console.warn("Failed to save message templates", e);
-      }
-    }
-  }, [templates, loaded]);
-
-  const addTemplate = useCallback((template: Omit<MessageTemplate, "id">) => {
+  const addTemplate = useCallback(async (template: Omit<MessageTemplate, "id">) => {
     const id = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    setTemplates((prev) => [...prev, { ...template, id }]);
+    const newTemplate = { ...template, id };
+    
+    // optimistic
+    setTemplates((prev) => {
+      const updated = [...prev, newTemplate];
+      // async call
+      fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...newTemplate, position_index: updated.length - 1 }),
+      }).catch(console.error);
+      return updated;
+    });
   }, []);
 
   const updateTemplate = useCallback((id: string, updates: Partial<Omit<MessageTemplate, "id">>) => {
-    setTemplates((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, ...updates } : t))
-    );
+    // optimistic
+    setTemplates((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)));
+    
+    // async call
+    fetch(`/api/messages/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    }).catch(console.error);
   }, []);
 
   const deleteTemplate = useCallback((id: string) => {
+    // optimistic
     setTemplates((prev) => prev.filter((t) => t.id !== id));
+    
+    // async call
+    fetch(`/api/messages/${id}`, { method: "DELETE" }).catch(console.error);
   }, []);
 
   const reorderTemplates = useCallback((ids: string[]) => {
     setTemplates((prev) => {
       const map = new Map(prev.map((t) => [t.id, t]));
-      return ids.map((id) => map.get(id)!).filter(Boolean);
+      const newOrder = ids.map((id) => map.get(id)!).filter(Boolean);
+      
+      // async call
+      Promise.all(ids.map((id, index) => 
+        fetch(`/api/messages/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ position_index: index }),
+        })
+      )).catch(console.error);
+      
+      return newOrder;
     });
   }, []);
 
-  const resetToDefaults = useCallback(() => {
-    setTemplates(DEFAULT_TEMPLATES);
-  }, []);
-
-  const clearAll = useCallback(() => {
-    setTemplates([]);
-    localStorage.removeItem(STORAGE_KEY);
-  }, []);
+  // Removed from UI, now no-ops just in case
+  const resetToDefaults = useCallback(() => {}, []);
+  const clearAll = useCallback(() => {}, []);
 
   const buildMessageFn = useCallback(
     (templateId: string, booking: Booking): string => {

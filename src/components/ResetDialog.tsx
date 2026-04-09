@@ -15,13 +15,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useBookings } from "@/lib/store";
-import { useMessages } from "@/lib/message-store";
 import { Trash2, AlertTriangle } from "lucide-react";
 
 export function ResetDialog() {
   const { hasPermission } = useAuth();
   const { clearAll } = useBookings();
-  const { clearAll: clearMessages } = useMessages();
   const [open, setOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [done, setDone] = useState(false);
@@ -33,7 +31,6 @@ export function ResetDialog() {
 
   const handleReset = () => {
     clearAll();
-    clearMessages();
     setDone(true);
     setTimeout(() => {
       setOpen(false);
@@ -69,7 +66,7 @@ export function ResetDialog() {
             Reset All Data
           </DialogTitle>
           <DialogDescription>
-            This will permanently delete all bookings, message templates, and
+            This will permanently delete all bookings and
             stored settings. This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
@@ -90,7 +87,6 @@ export function ResetDialog() {
                 </p>
                 <ul className="text-xs text-destructive/80 mt-1 space-y-0.5 list-disc pl-4">
                   <li>All imported bookings and their status history</li>
-                  <li>All custom message templates</li>
                   <li>All stored preferences</li>
                 </ul>
               </div>

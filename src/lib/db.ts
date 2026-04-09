@@ -76,6 +76,18 @@ export async function ensureTables() {
       )`,
       args: [],
     },
+    {
+      sql: `CREATE TABLE IF NOT EXISTS messages (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        body TEXT NOT NULL,
+        image_base64 TEXT,
+        position_index INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )`,
+      args: [],
+    },
   ]);
 
   // Migration: add permissions column if it doesn't exist (for existing DBs)
