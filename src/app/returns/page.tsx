@@ -10,7 +10,7 @@ import { BookingDetailSheet } from "@/components/BookingDetailSheet";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { isToday, isPast, format, differenceInCalendarDays, startOfDay } from "date-fns";
+import { isToday, isPast, format, differenceInCalendarDays, startOfDay, addHours } from "date-fns";
 import {
   Search,
   RotateCcw,
@@ -21,21 +21,6 @@ import {
   Clock,
   EuroIcon,
 } from "lucide-react";
-
-// Calculate overdue days and charge when customer arrives
-function getOverdueInfo(booking: Booking): { days: number; charge: number; arrivedAt: Date } | null {
-  // Find when RETURN_REQUESTED was set (= when customer marked as arrived)
-  const arrivedEntry = booking.statusHistory?.slice().reverse().find(
-    (h) => h.to === BookingStatus.RETURN_REQUESTED
-  );
-  const arrivedAt = arrivedEntry ? new Date(arrivedEntry.timestamp) : new Date();
-  const returnDate = new Date(booking.returnDate);
-
-  const overdueDays = differenceInCalendarDays(startOfDay(arrivedAt), startOfDay(returnDate));
-  if (overdueDays <= 0) return null;
-
-  return { days: overdueDays, charge: overdueDays * 20, arrivedAt };
-}
 
 export default function ReturnsPage() {
   const { hasPermission } = useAuth();
@@ -152,51 +137,52 @@ export default function ReturnsPage() {
                 const isRequested = booking.status === BookingStatus.RETURN_REQUESTED;
                 const isDispatched = booking.status === BookingStatus.SHUTTLE_DISPATCHED;
                 const isWaiting = !isRequested && !isDispatched;
-                const overdueInfo = (isRequested || isDispatched) ? getOverdueInfo(booking) : null;
                 const daysStayed = differenceInCalendarDays(
                   startOfDay(new Date(booking.returnDate)),
                   startOfDay(new Date(booking.entryDate))
                 ) + 1;
+                
+                // Find when they actually arrived (if they did), to freeze their penalty status
+                const arrivedEntry = booking.statusHistory?.slice().reverse().find(
+                  (h) => h.to === BookingStatus.RETURN_REQUESTED
+                );
+                const effectiveDate = arrivedEntry ? new Date(arrivedEntry.timestamp) : new Date();
+
+                // Determine if they are late based on when they arrived (or right now if waiting)
+                const isLateHours = effectiveDate > addHours(new Date(booking.returnDate), settings.overdueReturnHours);
+                let livePenaltyFee = 0;
+                if (isLateHours) {
+                  const daysDiff = differenceInCalendarDays(startOfDay(effectiveDate), startOfDay(new Date(booking.returnDate)));
+                  livePenaltyFee = Math.max(1, daysDiff) * settings.dailyOverdueFee;
+                }
 
                 return (
                   <Card
                     key={booking.id}
-                    className={`group transition-all duration-300 overflow-hidden cursor-pointer hover:shadow-lg
-                      ${isRequested ? "border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.1)] ring-1 ring-amber-500/20 glass-card" : ""}
-                      ${isDispatched ? "border-orange-500/30 opacity-90 bg-orange-500/5 glass-card" : ""}
-                      ${isWaiting ? "border-border/50 glass-card" : ""}
+                    className={`group transition-all duration-300 overflow-hidden cursor-pointer hover:shadow-lg relative
+                      ${isLateHours 
+                        ? "border-destructive/40 bg-destructive/[0.02] shadow-sm" 
+                        : isRequested 
+                          ? "border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.1)] ring-1 ring-amber-500/20 glass-card" 
+                          : isDispatched 
+                            ? "border-orange-500/30 opacity-90 bg-orange-500/5 glass-card" 
+                            : "border-border/50 glass-card"
+                      }
                     `}
                     onClick={() => {
                       setSelectedBooking(booking);
                       setSheetOpen(true);
                     }}
                   >
-                    {/* Overdue banner */}
-                    {overdueInfo && (
-                      <div className="flex items-center gap-2 px-4 py-2 bg-destructive/10 border-b border-destructive/20">
-                        <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />
-                        <span className="text-xs font-semibold text-destructive">
-                          {overdueInfo.days} day{overdueInfo.days !== 1 ? "s" : ""} overdue
-                        </span>
-                        <span className="mx-1 text-destructive/40">•</span>
-                        <EuroIcon className="h-3.5 w-3.5 text-destructive shrink-0" />
-                        <span className="text-xs font-bold text-destructive">
-                          €{overdueInfo.charge} to collect
-                        </span>
-                        <span className="ml-auto text-[10px] text-destructive/60">
-                          (€20/day × {overdueInfo.days})
-                        </span>
-                      </div>
-                    )}
-
                     <div className="flex flex-col sm:flex-row border-l-4 border-transparent sm:min-h-24">
                       {/* Left: Time & Status */}
-                      <div className="flex items-center sm:flex-col sm:justify-center sm:items-start p-4 sm:w-44 shrink-0 bg-muted/10 border-b sm:border-b-0 sm:border-r border-border/40 gap-3">
+                      <div className="flex items-center sm:flex-col sm:justify-center sm:items-start p-4 sm:w-44 shrink-0 transition-colors border-b sm:border-b-0 sm:border-r border-border/40 gap-3">
                         <div className="flex flex-col gap-1">
-                          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                            <Clock className="h-3 w-3" /> Return
+                          <span className={`text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 ${isLateHours ? "text-destructive" : "text-muted-foreground"}`}>
+                            <Clock className="h-3 w-3" /> 
+                            Return
                           </span>
-                          <span className="text-xl font-bold font-mono tracking-tight text-foreground">
+                          <span className={`text-2xl font-bold font-mono tracking-tight ${isLateHours ? "text-destructive" : "text-foreground"}`}>
                             {format(new Date(booking.returnDate), "HH:mm")}
                           </span>
                           <span className="text-[10px] text-muted-foreground">
@@ -209,9 +195,17 @@ export default function ReturnsPage() {
                       {/* Middle: Details */}
                       <div className="flex-1 p-4 grid grid-cols-2 gap-4">
                         <div className="flex flex-col justify-center">
-                          <h3 className="font-semibold text-base mb-1 truncate text-foreground/90">
-                            {booking.customerName}
-                          </h3>
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <h3 className="font-semibold text-base truncate text-foreground/90">
+                              {booking.customerName}
+                            </h3>
+                            {isLateHours && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-destructive/10 border border-destructive/20 text-[10px] font-bold text-destructive shadow-sm">
+                                <AlertTriangle className="h-3 w-3" />
+                                +{settings.overdueReturnHours}h Overdue (€{livePenaltyFee})
+                              </span>
+                            )}
+                          </div>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium flex-wrap">
                             <span>{booking.vehicle.make} {booking.vehicle.model}</span>
                             <span className="opacity-50">•</span>

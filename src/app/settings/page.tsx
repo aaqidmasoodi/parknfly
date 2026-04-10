@@ -22,6 +22,7 @@ import {
   Settings as SettingsIcon,
   Clock,
   RotateCcw,
+  EuroIcon,
 } from "lucide-react";
 import Image from "next/image";
 import { Label } from "@/components/ui/label";
@@ -290,6 +291,30 @@ export default function SettingsPage() {
                     />
                     <p className="text-[11px] text-muted-foreground leading-relaxed">
                       A return is classified as overdue if it is more than {settings.overdueReturnHours} hours late. For example, if a customer was supposed to return at 1 PM but comes at 5 PM with a 4-hour threshold, that&apos;s an overdue return.
+                    </p>
+                  </div>
+                  <Separator className="bg-border/50" />
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="daily-fee" className="text-xs font-medium">
+                        Daily Overdue Fee
+                      </Label>
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <EuroIcon className="h-3.5 w-3.5" />
+                        <span className="font-mono font-bold text-primary">€{settings.dailyOverdueFee}</span>
+                      </div>
+                    </div>
+                    <Input
+                      id="daily-fee"
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={settings.dailyOverdueFee}
+                      onChange={(e) => updateSetting("dailyOverdueFee", Math.max(0, parseFloat(e.target.value) || 0))}
+                      className="bg-background/50 border-border/50 h-9"
+                    />
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      The amount charged for the first "late block" and every subsequent calendar day they are late.
                     </p>
                   </div>
                 </CardContent>

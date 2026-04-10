@@ -12,10 +12,12 @@ const STORAGE_KEY = "parkandfly-settings";
 
 export interface AppSettings {
   overdueReturnHours: number; // Hours after which a return is considered overdue
+  dailyOverdueFee: number;    // Fee charged per day late
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
   overdueReturnHours: 4,
+  dailyOverdueFee: 20,
 };
 
 export interface SettingsContextValue {
