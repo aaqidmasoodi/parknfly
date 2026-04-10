@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useWhatsApp } from "@/lib/whatsapp-context";
 import { useSettings } from "@/lib/settings-store";
+import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -66,8 +67,11 @@ const STATUS_CONFIG = {
 export default function SettingsPage() {
   const { status, qrCode, isConnected, connect, disconnect, sendMessage } = useWhatsApp();
   const { settings, updateSetting } = useSettings();
+  const { hasPermission } = useAuth();
   const [testPhone, setTestPhone] = useState("0870376567");
   const [isSending, setIsSending] = useState(false);
+
+  const isManager = hasPermission("manage_users");
 
   const handleTestMessage = async () => {
     if (!testPhone) return;
@@ -82,12 +86,22 @@ export default function SettingsPage() {
     }
   };
 
+  if (!isManager) {
+    return (
+      <div className="flex flex-col h-full bg-background items-center justify-center space-y-4">
+        <AlertTriangle className="h-10 w-10 text-amber-500" />
+        <h2 className="text-lg font-semibold tracking-tight">Access Denied</h2>
+        <p className="text-muted-foreground text-sm">You do not have permission to view operations settings.</p>
+      </div>
+    );
+  }
+
   const cfg = STATUS_CONFIG[status];
   const StatusIcon = cfg.icon;
 
   return (
     <div className="flex flex-col h-full bg-background">
-      <header className="flex items-center gap-2 px-6 h-14 border-b border-border/40 shrink-0 glass-card z-10 sticky top-0">
+      <header className="flex items-center gap-2 px-6 md:pr-48 h-14 border-b border-border/40 shrink-0 glass-card z-10 sticky top-0">
         <SettingsIcon className="h-5 w-5 text-muted-foreground" />
         <h1 className="text-lg font-semibold tracking-tight">Settings</h1>
       </header>
@@ -95,7 +109,6 @@ export default function SettingsPage() {
       <div className="flex-1 overflow-y-auto">
         <div className="p-8 max-w-6xl mx-auto pb-20 md:pb-8 animate-fade-in-up">
           
-          {/* Two-column layout for desktop */}
           <div className="grid lg:grid-cols-3 gap-6">
             
             {/* Left column - WhatsApp Connection */}
@@ -299,7 +312,7 @@ export default function SettingsPage() {
                     <div className="bg-destructive/10 rounded-lg p-3 border border-destructive/20">
                       <p className="text-xs font-medium text-destructive mb-1">Wipe All Data</p>
                       <p className="text-[11px] text-destructive/80 leading-relaxed mb-2">
-                        Permanently delete all bookings, message templates, and settings from this browser.
+                        Permanently delete all bookings and settings from this browser (database deletion of bookings).
                       </p>
                       <ResetDialog />
                     </div>
@@ -323,12 +336,6 @@ export default function SettingsPage() {
                     <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       Message templates support placeholders like {"{{name}}"}, {"{{ref}}"}, and {"{{vehicle}}"} for personalization.
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      All data is stored locally in your browser and never leaves your device.
                     </p>
                   </div>
                 </CardContent>

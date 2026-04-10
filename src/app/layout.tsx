@@ -7,6 +7,7 @@ import { SettingsProvider } from "@/lib/settings-store";
 import { WhatsAppProvider } from "@/lib/whatsapp-context";
 import { AuthProvider } from "@/lib/auth-context";
 import { Sidebar, MobileNav, MobileTopBar } from "@/components/Sidebar";
+import { TopRightProfile } from "@/components/TopRightProfile";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
@@ -50,7 +51,8 @@ export default function RootLayout({
                 <MessageStoreProvider>
                   <SettingsProvider>
                     <Sidebar />
-                    <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                    <main className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
+                      <TopRightProfile />
                       <MobileTopBar />
                       {children}
                     </main>

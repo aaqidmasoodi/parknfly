@@ -136,7 +136,7 @@ export default function DashboardPage() {
       <div className="absolute bottom-1/4 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-[100px] pointer-events-none z-0"></div>
 
       {/* Header */}
-      <header className="flex items-center justify-between px-6 h-14 border-b border-border/40 shrink-0 glass-card z-10">
+      <header className="flex items-center justify-between px-6 md:pr-48 h-14 border-b border-border/40 shrink-0 glass-card z-10">
         <h1 className="text-lg font-semibold tracking-tight">Mission Control</h1>
         <CSVImportDialog />
       </header>

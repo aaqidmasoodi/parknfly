@@ -9,6 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -98,9 +106,13 @@ export default function UsersPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Delete confirmation
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Force reset password
+  const [resettingUserId, setResettingUserId] = useState<string | null>(null);
+  const [resetPasswordValue, setResetPasswordValue] = useState("");
+  const [isResettingUser, setIsResettingUser] = useState(false);
 
   // Permission saving
   const [savingPermissions, setSavingPermissions] = useState<string | null>(null);
@@ -233,6 +245,30 @@ export default function UsersPage() {
     }
   };
 
+  const handleForceResetPassword = async () => {
+    if (!resettingUserId || resetPasswordValue.length < 6) return;
+    setIsResettingUser(true);
+    try {
+      const res = await fetch(`/api/users/${resettingUserId}/password`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newPassword: resetPasswordValue }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      toast.success("Password reset!", {
+        description: `New password has been forced for ${users.find(u => u.id === resettingUserId)?.name}.`,
+      });
+      setResettingUserId(null);
+      setResetPasswordValue("");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to reset password");
+    } finally {
+      setIsResettingUser(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -251,7 +287,7 @@ export default function UsersPage() {
       <div className="absolute bottom-[-10%] left-[-5%] w-80 h-80 bg-blue-500/10 rounded-full blur-[100px] pointer-events-none z-0" />
 
       {/* Header */}
-      <header className="flex items-center justify-between px-4 sm:px-6 h-14 border-b border-border/40 shrink-0 glass-card z-10 sticky top-0">
+      <header className="flex items-center justify-between px-4 sm:px-6 md:pr-48 h-14 border-b border-border/40 shrink-0 glass-card z-10 sticky top-0">
         <h1 className="text-lg font-semibold tracking-tight flex items-center gap-2">
           <UsersIcon className="h-5 w-5 text-primary" />
           User Management
@@ -274,6 +310,46 @@ export default function UsersPage() {
           )}
         </Button>
       </header>
+
+      {/* Force Reset Password Dialog */}
+      <Dialog open={!!resettingUserId} onOpenChange={(open) => {
+        if (!open) {
+          setResettingUserId(null);
+          setResetPasswordValue("");
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-primary">
+              <Lock className="h-5 w-5" />
+              Reset Password
+            </DialogTitle>
+            <DialogDescription>
+              Set a new password for <span className="font-semibold text-foreground">{users.find(u => u.id === resettingUserId)?.name}</span>. They will use this upon next login.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="force-new-password">New Password</Label>
+              <Input
+                id="force-new-password"
+                type="text"
+                value={resetPasswordValue}
+                onChange={(e) => setResetPasswordValue(e.target.value)}
+                placeholder="At least 6 characters"
+                minLength={6}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+             <Button variant="outline" onClick={() => setResettingUserId(null)}>Cancel</Button>
+             <Button onClick={handleForceResetPassword} disabled={resetPasswordValue.length < 6 || isResettingUser}>
+                {isResettingUser && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                Force Reset
+             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="flex-1 overflow-y-auto z-10">
         <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-6 pb-24 md:pb-6 animate-fade-in-up">
@@ -502,18 +578,32 @@ export default function UsersPage() {
                                     </Button>
                                   </div>
                                 ) : (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setDeletingId(u.id);
-                                    }}
-                                    title="Delete user"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-7 w-7 p-0 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10 opacity-0 group-hover:opacity-100 transition-all"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setResettingUserId(u.id);
+                                      }}
+                                      title="Force Reset Password"
+                                    >
+                                      <Lock className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDeletingId(u.id);
+                                      }}
+                                      title="Delete user"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </>
                                 )}
                               </>
                             )}

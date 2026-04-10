@@ -97,7 +97,7 @@ export default function ReturnsPage() {
       <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none z-0" />
 
       {/* Header */}
-      <header className="flex items-center justify-between px-4 sm:px-6 h-14 border-b border-border/40 shrink-0 glass-card z-10 sticky top-0">
+      <header className="flex items-center justify-between px-4 sm:px-6 md:pr-48 h-14 border-b border-border/40 shrink-0 glass-card z-10 sticky top-0">
         <h1 className="text-lg font-semibold tracking-tight flex items-center gap-2">
           <RotateCcw className="h-5 w-5 text-amber-500" />
           Live Returns

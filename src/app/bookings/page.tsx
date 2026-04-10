@@ -131,7 +131,7 @@ export default function BookingsPage() {
       <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none z-0"></div>
 
       {/* Header */}
-      <header className="flex items-center justify-between px-6 h-14 border-b border-border/40 shrink-0 glass-card z-10 sticky top-0">
+      <header className="flex items-center justify-between px-6 md:pr-48 h-14 border-b border-border/40 shrink-0 glass-card z-10 sticky top-0">
         <h1 className="text-lg font-semibold tracking-tight flex items-center gap-2">
           <CarFront className="h-5 w-5 text-primary" />
           Bookings Database

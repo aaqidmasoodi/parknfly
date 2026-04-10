@@ -223,6 +223,7 @@ export function Sidebar() {
               </span>
             </Link>
           )}
+
           <button
             onClick={logout}
             className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-[13px] font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200"
@@ -250,7 +251,7 @@ export function MobileNav() {
       (item) => !item.permission || hasPermission(item.permission)
     ),
     ...(hasPermission("view_settings")
-      ? [{ href: "/settings", label: "Settings", icon: Settings, permission: "view_settings" as Permission }]
+      ? [{ href: "/settings", label: "Settings", icon: Settings } as NavItem]
       : []),
   ];
 
@@ -299,12 +300,12 @@ export function MobileTopBar() {
         priority
       />
       <div className="flex items-center gap-2">
-        <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-muted/30 border border-border/30">
+        <Link href="/profile" className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-muted/30 border border-border/30 hover:bg-muted/50 transition-colors">
           <div className="w-5 h-5 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-[9px] font-bold text-primary">
             {user?.name?.charAt(0)?.toUpperCase() || "?"}
           </div>
           <span className="text-[11px] font-medium text-muted-foreground">{user?.name?.split(" ")[0]}</span>
-        </div>
+        </Link>
         <button
           onClick={logout}
           className="p-1.5 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
